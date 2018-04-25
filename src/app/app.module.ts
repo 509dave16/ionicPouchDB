@@ -6,6 +6,8 @@ import { StatusBar } from '@ionic-native/status-bar';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import {PouchdbService} from "../services/pouchdb.service";
+import {NetworkService} from "../services/network.service";
 
 @NgModule({
   declarations: [
@@ -22,6 +24,8 @@ import { HomePage } from '../pages/home/home';
     HomePage
   ],
   providers: [
+    NetworkService,
+    PouchdbService,
     StatusBar,
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
