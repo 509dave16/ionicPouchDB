@@ -1,0 +1,34 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      Ionic Blank
+    </ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  The world is your oyster.
+  <p>
+    If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
+  </p>
+  <ion-list>
+    <ng-container *ngIf="todos">
+      <ion-item *ngFor="let row of todos.rows ">
+        <div>Id: {{ row.doc._id }}</div>
+        <div>Title: {{ row.doc.title }}</div>
+        <div>Completed: {{ row.doc.completed }}</div>
+      </ion-item>
+    </ng-container>
+    <ion-item>
+      <button (click)="addDefaultTodo()" ion-button block color="primary">
+        Add Default Todo
+      </button>
+    </ion-item>
+    <ion-item>
+      <button (click)="deleteLastTodo()" ion-button block color="primary">
+        Delete Last Todo
+      </button>
+    </ion-item>
+  </ion-list>
+
+</ion-content>

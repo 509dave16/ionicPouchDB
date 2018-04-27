@@ -1,9 +1,7 @@
-import { Component } from '@angular/core';
-import { NavController } from 'ionic-angular';
-import {PouchdbService, Todo} from "../../services/pouchdb.service";
-import uuidv4 from 'uuid/v4';
-import AllDocsResponse = PouchDB.Core.AllDocsResponse;
-import PouchDB from 'pouchdb';
+import { Component } from "@angular/core";
+import { NavController, AlertController } from 'ionic-angular';
+import { Todos } from '../../services/todos.service';
+import { LoginPage } from '../login/login';
 
 @Component({
   selector: 'page-home',
@@ -11,48 +9,85 @@ import PouchDB from 'pouchdb';
 })
 export class HomePage {
 
-  public todos: AllDocsResponse<Todo>;
-  public lastTodoDoc: PouchDB.Core.ExistingDocument<Todo>;
-  constructor(public navCtrl: NavController, public pouchdbService: PouchdbService) {
-   this.fetchTodos();
+  todos: any;
+
+  constructor(public nav: NavController, public todoService: Todos, public alertCtrl: AlertController) {
+
   }
 
-  private fetchTodos() {
-    this.pouchdbService.getTodos().then((response: PouchDB.Core.AllDocsResponse<Todo>) => {
-      this.todos = response;
-      const numOfRows = this.todos.rows.length;
-      if (!numOfRows) {
-        return;
-      }
-      const row = this.todos.rows[numOfRows - 1];
-      this.lastTodoDoc = row.doc;
-    }, () => {
-    })
-  }
+  ionViewDidLoad(){
 
-  public addDefaultTodo() {
-    const todo: Todo = {
-      _id: uuidv4(),
-      title: 'Learn Pouch DB',
-      completed: false,
-    };
-    this.pouchdbService.addTodo(todo).then((response: PouchDB.Core.Response) => {
-      console.log('Added todo!');
-      this.fetchTodos();
-    }, (error: PouchDB.Core.Error) => {
-      console.log(error.message);
+    this.todoService.getTodos().then((data) => {
+      this.todos = data;
     });
+
   }
 
-  public deleteLastTodo() {
-    if (!this.lastTodoDoc) {
-      return;
-    }
-    this.pouchdbService.deleteTodo(this.lastTodoDoc).then((response: PouchDB.Core.Response) => {
-      console.log('Removed todo!');
-      this.fetchTodos();
-    }, (error: PouchDB.Core.Error) => {
-      console.log(error.message);
-    });
+  logout(){
+    this.todoService.logout();
+    this.todos = null;
+    this.nav.setRoot(LoginPage);
   }
+
+  createTodo(){
+
+    let prompt = this.alertCtrl.create({
+      title: 'Add',
+      message: 'What do you need to do?',
+      inputs: [
+        {
+          name: 'title'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel'
+        },
+        {
+          text: 'Save',
+          handler: data => {
+            this.todoService.createTodo({title: data.title});
+          }
+        }
+      ]
+    });
+
+    prompt.present();
+
+  }
+
+  updateTodo(todo){
+
+    let prompt = this.alertCtrl.create({
+      title: 'Edit',
+      message: 'Change your mind?',
+      inputs: [
+        {
+          name: 'title'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel'
+        },
+        {
+          text: 'Save',
+          handler: data => {
+            this.todoService.updateTodo({
+              _id: todo._id,
+              _rev: todo._rev,
+              title: data.title
+            });
+          }
+        }
+      ]
+    });
+
+    prompt.present();
+  }
+
+  deleteTodo(todo){
+    this.todoService.deleteTodo(todo);
+  }
+
 }
