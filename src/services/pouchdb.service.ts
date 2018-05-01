@@ -21,7 +21,11 @@ export class PouchdbService {
     let options = {
       live: true,
       retry: true,
-      continuous: true
+      continuous: true,
+      auth: {
+        username: '509dave16',
+        password: 'dsf0@mia',
+      },
     };
     this.db.sync(this.remote, options);
 

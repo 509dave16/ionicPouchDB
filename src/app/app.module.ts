@@ -12,13 +12,15 @@ import {LoginPage} from "../pages/login/login";
 import {SignupPage} from "../pages/signup/signup";
 import {StatusBar} from "@ionic-native/status-bar";
 import {HttpClientModule} from "@angular/common/http";
+import {TestPage} from "../pages/test/test";
 
 @NgModule({
   declarations: [
     MyApp,
     HomePage,
     LoginPage,
-    SignupPage
+    SignupPage,
+    TestPage,
   ],
   imports: [
     HttpClientModule,
@@ -31,6 +33,7 @@ import {HttpClientModule} from "@angular/common/http";
     HomePage,
     LoginPage,
     SignupPage,
+    TestPage,
   ],
   providers: [
     NetworkService,

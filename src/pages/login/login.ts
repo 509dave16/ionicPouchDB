@@ -19,9 +19,6 @@ export class LoginPage {
   }
 
   login(){
-    //
-    // let headers = new HttpHeaders();
-    // headers.append('Content-Type', 'application/json');
     const headers = {'Content-Type': 'application/json'};
 
 
@@ -32,6 +29,7 @@ export class LoginPage {
 
     this.http.post('http://localhost:3000/auth/login', JSON.stringify(credentials), {headers })
       .subscribe(data => {
+        console.log(data);
         this.todoService.init(data);
         this.nav.setRoot(HomePage);
       }, (err) => {

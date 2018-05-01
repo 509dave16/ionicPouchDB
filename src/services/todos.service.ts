@@ -17,6 +17,8 @@ export class Todos {
     this.db = new PouchDB('todos');
 
     this.remote = details.userDBs.supertest;
+    console.log(this.remote);
+    const remoteDB = new PouchDB(this.remote);
 
     let options = {
       live: true,
@@ -24,10 +26,33 @@ export class Todos {
       continuous: true
     };
 
-    this.db.sync(this.remote, options);
 
-    console.log(this.db);
-
+    // this.db.sync(this.remote, options)
+    this.db.replicate.to(remoteDB, options)
+      .on('change', function (info) {
+        // handle change
+        console.log('info', info);
+      }).on('paused', function (err) {
+        // replication paused (e.g. replication up to date, user went offline)
+        console.log('paused', err);
+        // NOTE: This happens all the time should only log for more specific instances
+        // NOTE: This is happening frequently due to inherited docs that don't exist in CouchDB that are somehow made available in PouchDB.
+      }).on('active', function (data) {
+        // replicate resumed (e.g. new changes replicating, user went back online)
+        // console.log('active', data);
+        // NOTE: This happens all the time should only log for more specific instances
+      }).on('denied', function (err) {
+        // a document failed to replicate (e.g. due to permissions)
+        console.log('denied', err);
+      }).on('complete', function (info) {
+        // handle complete
+        console.log('complete', info);
+      }).on('error', function (err) {
+        // handle error
+        console.log('error', err);
+      })
+    ;
+    this.db.replicate.from(remoteDB, options);
   }
 
   logout(){
@@ -76,7 +101,11 @@ export class Todos {
   }
 
   createTodo(todo){
-    this.db.post(todo);
+    this.db.post(todo).then((result) => {
+      console.log(result);
+    }).catch((error) => {
+      console.log(error);
+    });
   }
 
   updateTodo(todo){

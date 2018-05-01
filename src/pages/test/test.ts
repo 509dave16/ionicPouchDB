@@ -6,10 +6,10 @@ import AllDocsResponse = PouchDB.Core.AllDocsResponse;
 import PouchDB from 'pouchdb';
 
 @Component({
-  selector: 'page-home',
-  templateUrl: 'home.html'
+  selector: 'page-test',
+  templateUrl: 'test.html'
 })
-export class HomePage {
+export class TestPage {
 
   public todos: AllDocsResponse<Todo>;
   public lastTodoDoc: PouchDB.Core.ExistingDocument<Todo>;

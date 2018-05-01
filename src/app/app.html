@@ -1,1 +1,25 @@
-<ion-nav [root]="rootPage"></ion-nav>
+<!--<ion-nav [root]="rootPage"></ion-nav>-->
+
+<ion-menu persistent="{{ true }}" [content]="rootNavComponent">
+  <ion-content class="menu">
+    <ion-list no-lines>
+      <button ion-item menuClose (click)="gotoPage('HomePage')">
+        Super Home
+        <ion-icon name="search" item-end></ion-icon>
+      </button>
+      <button ion-item menuClose (click)="gotoPage('LoginPage')">
+        Super Login
+        <ion-icon name="cog" item-end></ion-icon>
+      </button>
+      <button ion-item menuClose (click)="gotoPage('SignupPage')">
+        Super Signup
+        <ion-icon name="pin" item-end></ion-icon>
+      </button>
+      <button ion-item menuClose (click)="gotoPage('TestPage')">
+        Test
+        <ion-icon name="list-box" item-end></ion-icon>
+      </button>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+<ion-nav #rootNavComponent></ion-nav>
