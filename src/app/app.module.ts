@@ -13,6 +13,7 @@ import {SignupPage} from "../pages/signup/signup";
 import {StatusBar} from "@ionic-native/status-bar";
 import {HttpClientModule} from "@angular/common/http";
 import {TestPage} from "../pages/test/test";
+import {SuperLoginService} from "../services/superlogin.service";
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import {TestPage} from "../pages/test/test";
     TestPage,
   ],
   providers: [
+    SuperLoginService,
     NetworkService,
     PouchdbService,
     Todos,

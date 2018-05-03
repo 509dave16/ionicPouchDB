@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import PouchDB from 'pouchdb';
+import {SuperLoginService} from "./superlogin.service";
 
 @Injectable()
 export class Todos {
@@ -8,15 +9,15 @@ export class Todos {
   db: any;
   remote: any;
 
-  constructor() {
+  constructor(public superLoginService: SuperLoginService) {
 
   }
 
-  init(details){
+  init(){
 
     this.db = new PouchDB('todos');
 
-    this.remote = details.userDBs.supertest;
+    this.remote = this.superLoginService.SuperLoginClient.getDbUrl('supertest');
     console.log(this.remote);
     const remoteDB = new PouchDB(this.remote);
 
@@ -56,6 +57,7 @@ export class Todos {
   }
 
   logout(){
+    this.superLoginService.SuperLoginClient.logout('You have been logged out');
 
     this.data = null;
 

@@ -15,8 +15,9 @@ export class NetworkService {
     this.protocol = 'http';
   }
 
-  public buildUrl(path: string, port: number = 0) {
-    let url: string =  `${this.protocol}://${this.host}`
+  public buildUrl(path: string, port: number = 0, credentials = '', host: string = null) {
+    const determinedHost: string = host ? host : this.host;
+    let url: string =  `${this.protocol}://${determinedHost}`;
     if (port) {
       url += `:${port}`;
     }

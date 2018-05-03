@@ -39,6 +39,7 @@
     "ionicons": "3.0.0",
     "pouchdb": "^6.4.3",
     "rxjs": "5.5.10",
+    "superlogin-client": "^0.8.0",
     "sw-toolbox": "3.6.0",
     "uuid": "^3.2.1",
     "zone.js": "0.8.26"

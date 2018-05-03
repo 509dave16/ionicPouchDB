@@ -16,26 +16,27 @@ export class PouchdbService {
   private remote: string;
   constructor(public networkService: NetworkService) {
     this.db = new PouchDB('todos');
-    this.remote = this.networkService.buildUrl('todos', 5894);
+    const credentials: string = 'davidfall:davidfall@';
+    this.remote = this.networkService.buildUrl('todos', 5984, credentials, 'www.pouchdb-local.com');
+    const remoteDB = new PouchDB(this.remote);
 
     let options = {
       live: true,
       retry: true,
       continuous: true,
-      auth: {
-        username: '509dave16',
-        password: 'dsf0@mia',
-      },
+      // auth: {
+      //   username: 'davidfall',
+      //   password: 'davidfall',
+      // },
     };
-    this.db.sync(this.remote, options);
 
-    this.db.info()
-      .then((info) => {
-        LoggingUtil.logObject(info, 'logging pouchdb.info');
+    this.db.replicate.to(remoteDB, options)
+      .on('denied', function (err) {
+        // a document failed to replicate (e.g. due to permissions)
+        console.log('denied', err);
       })
-      .catch((error) => {
-        LoggingUtil.logObject(error, 'logging pouchdb.info error');
-      });
+    ;
+    this.db.replicate.from(remoteDB, options);
   }
 
 
