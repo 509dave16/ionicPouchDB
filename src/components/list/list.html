@@ -1,0 +1,7 @@
+<ng-container *ngIf="list">
+  <ion-item *ngFor="let item of list ">
+    <div>Id: {{ item.doc._id }}</div>
+    <div>Title: {{ item.doc.title }}</div>
+    <div>Completed: {{ item.doc.completed }}</div>
+  </ion-item>
+</ng-container>

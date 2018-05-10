@@ -14,6 +14,8 @@ import {StatusBar} from "@ionic-native/status-bar";
 import {HttpClientModule} from "@angular/common/http";
 import {TestPage} from "../pages/test/test";
 import {SuperLoginService} from "../services/superlogin.service";
+import {RelationalService} from "../services/relational.service";
+import {RelationalPage} from "../pages/relational/relational";
 
 @NgModule({
   declarations: [
@@ -22,6 +24,7 @@ import {SuperLoginService} from "../services/superlogin.service";
     LoginPage,
     SignupPage,
     TestPage,
+    RelationalPage,
   ],
   imports: [
     HttpClientModule,
@@ -35,6 +38,7 @@ import {SuperLoginService} from "../services/superlogin.service";
     LoginPage,
     SignupPage,
     TestPage,
+    RelationalPage,
   ],
   providers: [
     SuperLoginService,
@@ -43,7 +47,8 @@ import {SuperLoginService} from "../services/superlogin.service";
     Todos,
     StatusBar,
     SplashScreen,
-    {provide: ErrorHandler, useClass: IonicErrorHandler}
+    {provide: ErrorHandler, useClass: IonicErrorHandler},
+    RelationalService
   ]
 })
 export class AppModule {}

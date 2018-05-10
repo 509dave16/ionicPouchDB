@@ -8,6 +8,12 @@ import {TestPage} from "../pages/test/test";
 import {SignupPage} from "../pages/signup/signup";
 import {SuperLoginService} from "../services/superlogin.service";
 import {Todos} from "../services/todos.service";
+import {RelationalService} from "../services/relational.service";
+import {RelationalPage} from "../pages/relational/relational";
+import PouchDB from 'pouchdb';
+import RelationalPouch from 'relational-pouch';
+import PouchDbFind from 'pouchdb-find';
+
 @Component({
   templateUrl: 'app.html'
 })
@@ -27,11 +33,15 @@ export class MyApp {
    */
   @ViewChild('rootNavComponent') private rootNavComponent: Nav;
 
-  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos) {
+  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService) {
     platform.ready().then(() => {
+      PouchDB.plugin(RelationalPouch);
+      PouchDB.plugin(PouchDbFind);
       if (superLoginService.SuperLoginClient.authenticated()) {
-        todoService.init(superLoginService.SuperLoginClient.getDbUrl('supertest'));
-        this.rootNavComponent.setRoot(HomePage, {});
+        // todoService.init();
+        relationalService.init();
+        // this.rootNavComponent.setRoot(HomePage, {});
+        this.rootNavComponent.setRoot(RelationalPage, {});
       } else {
         this.rootNavComponent.setRoot(LoginPage, {});
       }
