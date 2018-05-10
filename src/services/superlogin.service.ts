@@ -36,7 +36,7 @@ export class SuperLoginService {
       // The number of milliseconds before a request times out
       // If the request takes longer than `timeout`, the request will be aborted.
       // Default is 0, meaning it won't timeout.
-      timeout: 2000
+      timeout: 0
     };
     this.SuperLoginClient.configure(config);
   }

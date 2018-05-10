@@ -18,7 +18,6 @@ export class Todos {
     this.db = new PouchDB('todos');
 
     this.remote = this.superLoginService.SuperLoginClient.getDbUrl('supertest');
-    console.log(this.remote);
     const remoteDB = new PouchDB(this.remote);
 
     let options = {
@@ -27,8 +26,6 @@ export class Todos {
       continuous: true
     };
 
-
-    // this.db.sync(this.remote, options)
     this.db.replicate.to(remoteDB, options)
       .on('change', function (info) {
         // handle change
