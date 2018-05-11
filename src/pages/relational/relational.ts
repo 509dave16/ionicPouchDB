@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import {RelationalService} from "../../services/relational.service";
+import {ResourceModel} from "../../classes/ResourceModel";
+import {ResourceCollection} from "../../classes/ResourceCollection";
 
 /**
  * Generated class for the RelationalPage page.
@@ -16,13 +18,13 @@ import {RelationalService} from "../../services/relational.service";
 })
 export class RelationalPage {
 
-  authors: any[] = [];
-  books: any[] = [];
+  authors: ResourceModel[] = [];
+  books: ResourceCollection;
   constructor(public relationalService: RelationalService, public navCtrl: NavController, public navParams: NavParams) {
     relationalService.seedTestData().then(() => {
-      relationalService.getTestData().then((data) => {
-        this.authors = data.authors;
-        this.books = data.books;
+      relationalService.getTestData().then((author: ResourceModel) => {
+        this.authors = [author];
+        this.books = author.getCollection('books');
       })
     });
 

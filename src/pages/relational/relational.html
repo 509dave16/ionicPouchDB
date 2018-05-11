@@ -16,14 +16,14 @@
 <ion-content padding>
   <ng-container *ngIf="authors.length">
     <ion-item *ngFor="let author of authors ">
-      <div>Id: {{ author.id }}</div>
-      <div>Name: {{ author.name }}</div>
+      <div>Id: {{ author.getField('id') }}</div>
+      <div>Name: {{ author.getField('name') }}</div>
     </ion-item>
   </ng-container>
-  <ng-container *ngIf="books.length">
+  <ng-container *ngIf="books">
     <ion-item *ngFor="let book of books ">
-      <div>Id: {{ book.id }}</div>
-      <div>Title: {{ book.title }}</div>
+      <div>Id: {{ book.getField('id') }}</div>
+      <div>Title: {{ book.getField('title') }}</div>
     </ion-item>
   </ng-container>
 </ion-content>
