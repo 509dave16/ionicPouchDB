@@ -1,15 +1,15 @@
 import {ResourceEntity} from "./ResourceEntity";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceCollection} from "./ResourceCollection";
-import {jsonCopy} from "../utils/json.util";
 import ResourceQuery = Resource.ResourceQuery;
+import {jsonCopy} from "../utils/json.util";
 
 export class ResourceModel extends ResourceEntity{
   private resource: any;
   constructor(resource: any, type: string, schema: TypeSchema[], query: ResourceQuery, relationalData: Resource.RelationalData)
   {
     super(type, schema, relationalData);
-    this.resource = resource;
+    this.resource = jsonCopy(resource);
   }
   get(relation): ResourceModel|ResourceCollection {
     const relationType = this.getRelationType(relation);
@@ -38,11 +38,9 @@ export class ResourceModel extends ResourceEntity{
     if (!isCollection) {
       throw new Error(`Relation ${relation} does not have hasMany defined.`);
     }
-      const type = relationType.hasMany;
-      const relationIds = this.resource[relation];
-      const relationalDataCopy = jsonCopy(this.relationalData);
-      relationalDataCopy[type] =  this.getResourcesByTypeAndIds(type, relationIds);
-      return new ResourceCollection(type, this.schema, this.query, relationalDataCopy);
+    const type = relationType.hasMany;
+    const relationIds = this.resource[relation];
+    return new ResourceCollection(type, this.schema, this.query, this.relationalData, relationIds);
   }
 
   getModel(relation): ResourceModel {

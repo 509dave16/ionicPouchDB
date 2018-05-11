@@ -2,26 +2,37 @@ import {ResourceEntity} from "./ResourceEntity";
 import {ResourceModel} from "./ResourceModel";
 import TypeSchema = Resource.TypeSchema;
 import ResourceQuery = Resource.ResourceQuery;
+import {jsonCopy} from "../utils/json.util";
 
 export class ResourceCollection extends ResourceEntity {
-  public resourceCollection: any[];
-  constructor(type: string, schema: TypeSchema[], query: ResourceQuery, relationalData: Resource.RelationalData) {
+  private resourceCollection: any[];
+  private ids: number[];
+  constructor(type: string, schema: TypeSchema[], query: ResourceQuery, relationalData: Resource.RelationalData, ids: number[] = []) {
     super(type, schema, relationalData);
     if (relationalData[type] === undefined) {
       throw new Error(`type => ${type} is not defined in data.`);
     }
-    this.resourceCollection = relationalData[type];
+    this.resourceCollection = jsonCopy(this.getResourcesByTypeAndIds(type, ids));
+    this.ids = ids;
   }
 
   *[Symbol.iterator]() {
-    for (let index = 0; index < this.resourceCollection.length; index++) {
-      yield new ResourceModel(this.resourceCollection[index], this.type, this.schema, this.query, this.relationalData);
+    let numOfResourcesIterated = 0;
+    for (let index = 0; index < this.resourceCollection.length && numOfResourcesIterated < this.ids.length; index++) {
+      const resource = this.resourceCollection[index];
+      if (this.ids.length === 0) {
+        yield new ResourceModel(resource, this.type, this.schema, this.query, this.relationalData);
+      } else if (this.ids.find(id => resource.id === id)) {
+        numOfResourcesIterated++;
+        yield new ResourceModel(resource, this.type, this.schema, this.query, this.relationalData);
+      }
     }
   }
 
   first(): ResourceModel {
     if (this.resourceCollection.length) {
-      return new ResourceModel(this.resourceCollection[0], this.type, this.schema, this.query, this.relationalData);
+      const resource = this.resourceCollection[0];
+      return new ResourceModel(resource, this.type, this.schema, this.query, this.relationalData);
     }
     return null;
   }

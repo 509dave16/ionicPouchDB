@@ -139,13 +139,13 @@ export class RelationalDB {
   private wrapWithCollection(promise, query: ResourceQuery): Promise<ResourceCollection>
   {
     return promise.then((data) => {
-      return new ResourceCollection(query.type, this.schema, query, data);
+      return new ResourceCollection(query.type, this.schema, query, data, query.ids || []);
     })
   }
 
   private wrapWithModel(promise: Promise<any>, query: ResourceQuery): Promise<ResourceModel> {
     return promise.then((data) => {
-      return new ResourceCollection(query.type, this.schema, query, data).first()
+      return new ResourceCollection(query.type, this.schema, query, data, query.ids).first()
     })
   }
 
