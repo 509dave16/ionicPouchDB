@@ -14,16 +14,22 @@
 
 
 <ion-content padding>
-  <ng-container *ngIf="authors.length">
-    <ion-item *ngFor="let author of authors ">
-      <div>Id: {{ author.getField('id') }}</div>
-      <div>Name: {{ author.getField('name') }}</div>
-    </ion-item>
-  </ng-container>
-  <ng-container *ngIf="books">
-    <ion-item *ngFor="let book of books ">
-      <div>Id: {{ book.getField('id') }}</div>
-      <div>Title: {{ book.getField('title') }}</div>
-    </ion-item>
-  </ng-container>
+    <ng-container *ngIf="authors.length">
+      <ion-item-group>
+        <ion-item-divider color="light">Authors</ion-item-divider>
+        <ion-item *ngFor="let author of authors ">
+          <div>Id: {{ author.getField('id') }}</div>
+          <div>Name: {{ author.getField('name') }}</div>
+        </ion-item>
+      </ion-item-group>
+    </ng-container>
+    <ng-container *ngIf="books">
+      <ion-item-group>
+        <ion-item-divider color="light">Book</ion-item-divider>
+        <ion-item *ngFor="let book of books ">
+          <div>Id: {{ book.getField('id') }}</div>
+          <div>Title: {{ book.getField('title') }}</div>
+        </ion-item>
+      </ion-item-group>
+    </ng-container>
 </ion-content>
