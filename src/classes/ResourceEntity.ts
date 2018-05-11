@@ -1,10 +1,12 @@
 import TypeSchema = Resource.TypeSchema;
+import ResourceQuery = Resource.ResourceQuery;
 
 export class ResourceEntity {
   protected relationalData: Resource.RelationalData;
   protected type: string;
   protected schema: any[];
   protected typeSchema: TypeSchema;
+  protected query: ResourceQuery;
   constructor(type: string, schema: TypeSchema[], relationalData: Resource.RelationalData) {
     this.relationalData = relationalData;
     this.type = type;

@@ -2,10 +2,11 @@ import {ResourceEntity} from "./ResourceEntity";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceCollection} from "./ResourceCollection";
 import {jsonCopy} from "../utils/json.util";
+import ResourceQuery = Resource.ResourceQuery;
 
 export class ResourceModel extends ResourceEntity{
   private resource: any;
-  constructor(resource: any, type: string, schema: TypeSchema[], relationalData: Resource.RelationalData)
+  constructor(resource: any, type: string, schema: TypeSchema[], query: ResourceQuery, relationalData: Resource.RelationalData)
   {
     super(type, schema, relationalData);
     this.resource = resource;
@@ -41,7 +42,7 @@ export class ResourceModel extends ResourceEntity{
       const relationIds = this.resource[relation];
       const relationalDataCopy = jsonCopy(this.relationalData);
       relationalDataCopy[type] =  this.getResourcesByTypeAndIds(type, relationIds);
-      return new ResourceCollection(type, this.schema, relationalDataCopy);
+      return new ResourceCollection(type, this.schema, this.query, relationalDataCopy);
   }
 
   getModel(relation): ResourceModel {
@@ -56,7 +57,7 @@ export class ResourceModel extends ResourceEntity{
     const type = relationType.belongsTo;
     const relationId = this.resource[relation];
     const resource = this.getResourceByTypeAndId(type, relationId);
-    return new ResourceModel(resource, type, this.schema, this.relationalData);
+    return new ResourceModel(resource, type, this.schema, this.query, this.relationalData);
   }
 
   getField(field) {

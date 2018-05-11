@@ -12,4 +12,19 @@ namespace Resource {
       };
     }
   }
+  export interface ResourceQuery {
+    ids?: number[];
+    attachmentId?: string;
+    options?: FindOptions;
+    belongsToKey?: string;
+    belongsToId?: number;
+    type: string;
+  }
+
+  export interface FindOptions {
+    startKey?: number,
+    endKey?: number,
+    limit?: number,
+    skip?: boolean,
+  }
 }
