@@ -11,19 +11,11 @@ export class ResourceCollection extends ResourceEntity {
     }
     this.resourceCollection = relationalData[type];
   }
-  [Symbol.iterator]() {
-    let index = 0;
-    const collection = this.resourceCollection;
-    const that = this;
-    return {
-      next() {
-        const value = new ResourceModel(collection[index++], that.type, that.schema, that.relationalData);
-        return {
-          value,
-          done: index === collection.length
-        };
-      }
-    };
+
+  *[Symbol.iterator]() {
+    for (let index = 0; index < this.resourceCollection.length; index++) {
+      yield new ResourceModel(this.resourceCollection[index], this.type, this.schema, this.relationalData);
+    }
   }
 
   first(): ResourceModel {
