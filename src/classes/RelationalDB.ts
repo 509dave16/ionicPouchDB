@@ -1,18 +1,18 @@
 import PouchDB from 'pouchdb';
-import Database = PouchDB.Database;
 import {ResourceCollection} from "./ResourceCollection";
 import {ResourceModel} from "./ResourceModel";
 import TypeSchema = Resource.TypeSchema;
-import ResourceQuery = Resource.ResourceQuery;
+import RelationalDatabase = Resource.RelationalDatabase;
 import FindOptions = Resource.FindOptions;
-interface RelationalPouch extends Database {
-  setSchema?(schema: any);
-  rel?: any;
+
+export interface ResourceQuery {
+  (): Promise<ResourceCollection|ResourceModel>;
 }
 
 export class RelationalDB {
+
   private schema: TypeSchema[];
-  private db: RelationalPouch;
+  private db: RelationalDatabase;
 
   constructor(schema: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
     this.schema = schema;
@@ -50,44 +50,57 @@ export class RelationalDB {
   }
 
   save(type: string, object: any): Promise<ResourceModel> {
-    return this.wrapWithModel(this.db.rel.save(type, object), {
+    return this.wrapWithModel(
       type,
-      ids: [object.id],
-    });
+      [object.id],
+      this.db.rel.save(type, object),
+      () => this.findById(type, object.id)
+    );
   }
 
   findAll(type: string): Promise<ResourceCollection> {
-    return this.wrapWithCollection(this.db.rel.find(type), { type });
+    return this.wrapWithCollection(
+      type,
+      null,
+      this.db.rel.find(type),
+      () => this.db.rel.find(type)
+    );
   }
 
   findById(type: string, id: number): Promise<ResourceModel> {
-    return this.wrapWithModel(this.db.rel.find(type, id), {
+    return this.wrapWithModel(
       type,
-      ids: [id],
-    });
+      [id],
+      this.db.rel.find(type, id),
+      () => this.db.rel.find(type, id)
+    );
   }
 
   findByIds(type: string, ids: number[]): Promise<ResourceCollection> {
-    return this.wrapWithCollection(this.db.rel.find(type, ids), {
+    return this.wrapWithCollection(
       type,
       ids,
-    });
+      this.db.rel.find(type, ids),
+      () => this.db.rel.find(type, ids)
+    );
   }
   // Update this later if we need to include options in the query object
   findByOptions(type: string, options: FindOptions): Promise<ResourceCollection> {
-    return this.wrapWithCollection(this.db.rel.find(type, options), {
+    return this.wrapWithCollection(
       type,
-      options
-    });
+      null,
+      this.db.rel.find(type, options),
+      () => this.db.rel.find(type, options)
+    );
   }
   findHasMany(type: string, belongsToKey: string, belongsToId: number): Promise<ResourceCollection> {
-    return this.wrapWithCollection(this.db.rel.findHasMany(type, belongsToKey, belongsToId), {
+    return this.wrapWithCollection(
       type,
-      belongsToId,
-      belongsToKey
-    });
+      null,
+      this.db.rel.findHasMany(type, belongsToKey, belongsToId),
+      () => this.db.rel.findHasMany(type, belongsToKey, belongsToId)
+    );
   }
-
   delete(type: any, object: any): Promise<any> {
     return this.db.rel.del(type, object);
   }
@@ -96,27 +109,26 @@ export class RelationalDB {
     return this.db.rel(type, id);
   }
 
-  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<ResourceModel> {
-    return this.wrapWithModel(this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType), {
-      type,
-      ids: [object.id],
-      attachmentId,
-    });
+  getAttachment(type: string, id: number, attachmentId: string): Promise<Blob> {
+    return this.db.rel.getAttachment(type, id, attachmentId)
   }
-  getAttachment(type: string, id: number, attachmentId: string) {
-    return this.wrapWithModel(this.db.rel.getAttachment(type, id, attachmentId), {
+
+  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<ResourceModel> {
+    return this.wrapWithModel(
       type,
-      ids: [id],
-      attachmentId,
-    });
+      [object.id],
+      this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType),
+      () => this.db.rel.find(type, object.id)
+    );
   }
 
   removeAttachment(type: string, object: any, attachmentId: string): Promise<ResourceModel> {
-    return this.wrapWithModel(this.db.rel.removeAttachment(type, object, attachmentId), {
+    return this.wrapWithModel(
       type,
-      ids: [object.id],
-      attachmentId
-    });
+      [object.id],
+      this.db.rel.removeAttachment(type, object, attachmentId),
+      () => this.findById(type, object.id)
+    );
   }
 
   parseDocID(docID: number): string {
@@ -127,26 +139,25 @@ export class RelationalDB {
     return this.db.rel.makeDocID(docID);
   }
 
-  parseRelDocs(type: string, pouchDocs: any, query: ResourceQuery): any {
-    return new ResourceCollection(type, this.schema, query, this.db.rel.parseRelDocs(type, pouchDocs));
+  parseRelDocs(type: string, ids: number[], pouchDocs: any, query: ResourceQuery): any {
+    return new ResourceCollection(type, query, this.db.rel.parseRelDocs(type, pouchDocs), ids, this.schema, this);
   }
 
   setSchema(schema: any): void {
     this.db.setSchema(schema);
   }
 
-
-  private wrapWithCollection(promise, query: ResourceQuery): Promise<ResourceCollection>
+  private wrapWithCollection(type: string, ids: number[], promise, query: ResourceQuery): Promise<ResourceCollection>
   {
     return promise.then((data) => {
-      return new ResourceCollection(query.type, this.schema, query, data, query.ids || []);
-    })
+      return new ResourceCollection(type, query, data,ids || [], this.schema, this);
+    });
   }
 
-  private wrapWithModel(promise: Promise<any>, query: ResourceQuery): Promise<ResourceModel> {
+  private wrapWithModel(type: string, ids: number[], promise: Promise<any>, query: ResourceQuery): Promise<ResourceModel> {
     return promise.then((data) => {
-      return new ResourceCollection(query.type, this.schema, query, data, query.ids).first()
-    })
+      return new ResourceCollection(type, query, data, ids, this.schema, this).first();
+    });
   }
 
 }

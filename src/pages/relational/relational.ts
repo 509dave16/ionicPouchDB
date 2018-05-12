@@ -21,13 +21,10 @@ export class RelationalPage {
   authors: ResourceModel[] = [];
   books: ResourceCollection;
   constructor(public relationalService: RelationalService, public navCtrl: NavController, public navParams: NavParams) {
-    relationalService.seedTestData().then(() => {
-      relationalService.getTestData().then((author: ResourceModel) => {
-        this.authors = [author];
-        this.books = author.getCollection('books');
-      })
-    });
-
+    relationalService.seedTestData().then((author: ResourceModel) => {
+      this.authors = [author];
+      this.books = author.getCollection('books');
+    })
   }
 
 

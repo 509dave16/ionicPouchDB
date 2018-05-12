@@ -1,15 +1,17 @@
 import {ResourceEntity} from "./ResourceEntity";
-import TypeSchema = Resource.TypeSchema;
 import {ResourceCollection} from "./ResourceCollection";
-import ResourceQuery = Resource.ResourceQuery;
-import {jsonCopy} from "../utils/json.util";
+import {objectClone, objectEqual} from "../utils/object.util";
+import TypeSchema = Resource.TypeSchema;
+import RelationalData = Resource.RelationalData;
+import {RelationalDB, ResourceQuery} from "./RelationalDB";
 
 export class ResourceModel extends ResourceEntity{
   private resource: any;
-  constructor(resource: any, type: string, schema: TypeSchema[], query: ResourceQuery, relationalData: Resource.RelationalData)
+
+  constructor(type: string, query: ResourceQuery, relationalData: RelationalData, resource: any, schema: TypeSchema[], db: RelationalDB)
   {
-    super(type, schema, relationalData);
-    this.resource = jsonCopy(resource);
+    super(type, query, relationalData, schema, db);
+    this.resource = objectClone(resource);
   }
   get(relation): ResourceModel|ResourceCollection {
     const relationType = this.getRelationType(relation);
@@ -40,7 +42,7 @@ export class ResourceModel extends ResourceEntity{
     }
     const type = relationType.hasMany;
     const relationIds = this.resource[relation];
-    return new ResourceCollection(type, this.schema, this.query, this.relationalData, relationIds);
+    return new ResourceCollection(type, this.query, this.relationalData, relationIds, this.schema, this.db);
   }
 
   getModel(relation): ResourceModel {
@@ -55,10 +57,30 @@ export class ResourceModel extends ResourceEntity{
     const type = relationType.belongsTo;
     const relationId = this.resource[relation];
     const resource = this.getResourceByTypeAndId(type, relationId);
-    return new ResourceModel(resource, type, this.schema, this.query, this.relationalData);
+    return new ResourceModel(type, this.query, this.relationalData, resource, this.schema, this.db);
   }
 
   getField(field) {
     return this.resource[field];
+  }
+
+  setField(field, value) {
+    this.resource[field] = value;
+  }
+
+  save(refetch: boolean = false): Promise<any> {
+    const originalResource = this.getResourceByTypeAndId(this.type, this.resource.id);
+    const changed = objectEqual(this.resource, originalResource);
+    if (!changed) {
+      return Promise.resolve(this);
+    }
+    return this.db.save(this.type, this.resource)
+      .then((data: any) => {
+        if (!refetch) {
+          return this;
+        }
+        return this.refetch();
+      })
+    ;
   }
 }

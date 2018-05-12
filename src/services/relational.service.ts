@@ -1,6 +1,5 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
-import PouchDB from "pouchdb";
 import {RelationalDB} from "../classes/RelationalDB";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
@@ -20,23 +19,33 @@ export class RelationalService {
 
   }
 
-  seedTestData()
+  seedTestData(): Promise<ResourceModel>
   {
     return this.getTestData()
       .then((author: ResourceModel) => {
         if (author) {
-          return;
+          return author;
         }
-        return this.db.save('authors', {
-          name: 'George R. R. Martin', id: 1, books: [6, 7]
-        }).then(() => {
-          return this.db.save('books', { title: 'A Game of Thrones', id: 6, author: 1});
-        }).then(() =>  {
-          return this.db.save('books', {title: 'The Hedge Knight', id: 7, author: 1});
-        }).catch(console.log.bind(console));
+        const gotBook = { title: 'A Game of Thrones', id: 6, author: 1};
+        const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
+        const grmAuthor = { name: 'George R. R. Martin', id: 1, books: [6, 7] };
+        return this.db.save('books', gotBook)
+          .then((book: ResourceModel) =>  {
+            return this.db.save('books', hkBook);
+          })
+          .then((book: ResourceModel) => {
+            return this.db.save('authors', grmAuthor);
+          })
+          .then((author: ResourceModel) => {
+            return author.refetch();
+          })
+          .then((refetchedAuthor: ResourceModel) => {
+            return refetchedAuthor;
+          })
+          .catch(console.log.bind(console))
+        ;
       })
     ;
-
   }
 
   getTestData(): Promise<ResourceModel>

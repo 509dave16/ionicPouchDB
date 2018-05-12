@@ -2,6 +2,7 @@ namespace Resource {
   export interface RelationalData {
     [resourceName: string]: any[];
   }
+
   export interface TypeSchema {
     singular: string;
     plural: string;
@@ -12,19 +13,17 @@ namespace Resource {
       };
     }
   }
-  export interface ResourceQuery {
-    ids?: number[];
-    attachmentId?: string;
-    options?: FindOptions;
-    belongsToKey?: string;
-    belongsToId?: number;
-    type: string;
-  }
 
   export interface FindOptions {
     startKey?: number,
     endKey?: number,
     limit?: number,
     skip?: boolean,
+  }
+
+  export interface RelationalDatabase extends PouchDB.Database {
+    setSchema?(schema: any);
+    rel?: any;
+    schema?: any;
   }
 }

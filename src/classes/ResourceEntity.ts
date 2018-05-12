@@ -1,17 +1,22 @@
 import TypeSchema = Resource.TypeSchema;
-import ResourceQuery = Resource.ResourceQuery;
+import RelationalData = Resource.RelationalData;
+import {RelationalDB, ResourceQuery} from "./RelationalDB";
 
 export class ResourceEntity {
-  protected relationalData: Resource.RelationalData;
+  protected relationalData: RelationalData;
   protected type: string;
   protected schema: any[];
   protected typeSchema: TypeSchema;
   protected query: ResourceQuery;
-  constructor(type: string, schema: TypeSchema[], relationalData: Resource.RelationalData) {
-    this.relationalData = relationalData;
+  protected db: RelationalDB;
+
+  constructor(type: string, query: ResourceQuery, relationalData: RelationalData, schema: TypeSchema[], db: RelationalDB) {
     this.type = type;
+    this.query = query;
+    this.relationalData = relationalData;
     this.schema = schema;
     this.typeSchema = this.getTypeSchema(type, this.schema);
+    this.db = db;
   }
 
   protected getTypeSchema(type: string, schema: TypeSchema[]): TypeSchema {
@@ -41,5 +46,9 @@ export class ResourceEntity {
 
   protected getResourcesByType(type) {
     return this.relationalData[type];
+  }
+
+  public refetch() {
+    return this.query();
   }
 }
