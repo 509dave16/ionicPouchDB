@@ -13,16 +13,24 @@ export class ResourceCollection extends Array {
   }
 
   add(model: ResourceModel) {
+    this.push(model);
+    if (!this.relationDesc) {
+      return;
+    }
     const { parent, relationName } = this.relationDesc;
     const ids: number[] = parent[relationName];
     if (ids.find(id => id === model.id)) {
       return;
     }
     ids.push(model.id);
-    this.push(model);
   }
 
   remove(model: ResourceModel) {
+    const indexOfModel: number = this.indexOf(model);
+    this.splice(indexOfModel, 1);
+    if (!this.relationDesc) {
+      return;
+    }
     const { parent, relationName } = this.relationDesc;
     const ids: number[] = parent[relationName];
     let indexOfId = ids.indexOf(model.id);
@@ -30,8 +38,6 @@ export class ResourceCollection extends Array {
       return;
     }
     ids.splice(indexOfId, 1);
-    const indexOfModel: number = this.indexOf(model);
-    this.splice(indexOfModel, 1);
   }
 
   first(): ResourceModel {

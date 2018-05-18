@@ -1,4 +1,4 @@
-import {Database, ResourceQuery} from "./Database";
+import {Database} from "./Database";
 import TypeSchema = Resource.TypeSchema;
 import RootResourceDescriptor = Resource.RootResourceDescriptor;
 import {Resource} from "../namespaces/Resource.namespace";
@@ -12,6 +12,8 @@ import RelationDescriptor = Resource.RelationDescriptor;
 export class SideloadedDataManager {
   private static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
   private static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
+  private static readonly PLURALITY_MANY = 'collection';
+  private static readonly PLURALITY_ONE = 'model';
 
   protected rootResourceDescriptor: RootResourceDescriptor;
   protected sideloadedData: SideloadedData;
@@ -33,6 +35,7 @@ export class SideloadedDataManager {
   }
 
   private cacheRelations() {
+    this.relationCache = {};
     for (const type of  Object.keys(this.wrappedData)) {
       const models: ResourceModel[] = this.wrappedData[type];
       models.map((model: ResourceModel) => this.cacheModelRelations(type, model));
@@ -41,7 +44,7 @@ export class SideloadedDataManager {
 
   private cacheModelRelations(type: string, model: ResourceModel) {
     const schema = this.getTypeSchema(type);
-    for (const relationName in Object.keys(schema.relations)) {
+    for (const relationName of Object.keys(schema.relations)) {
       const relation = schema.relations[relationName];
       const relationResourceType = this.getResourceType(relation);
       const relationType = this.getRelationType(relation);
@@ -54,10 +57,10 @@ export class SideloadedDataManager {
       };
       let value: ResourceModel|ResourceCollection = null;
       if (relationType === SideloadedDataManager.RELATION_TYPE_BELONGS_TO) {
-        const resourceModel: ResourceModel = this.getResourceModelByTypeAndId(relationResourceType, model[relationName]);
+        const resourceModel: ResourceModel = this.getResourceModelByTypeAndId(relationResourceType, model.getField(relationName));
         resourceModel.setRelationDescriptor(relationDesc);
       } else if (relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
-        const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(relationResourceType, model[relationName]);
+        const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(relationResourceType, model.getField(relationName));
         value = new ResourceCollection(models, relationDesc, this);
       }
       this.setRelation(type, model.id, relationName, value);
@@ -130,9 +133,23 @@ export class SideloadedDataManager {
     ;
   }
 
-  public getRoot(): any {
-    // todo make this grab appropriate thing
-    return 'hello';
+  public getRoot(): ResourceCollection | ResourceModel {
+    if (this.rootResourceDescriptor.plurality === SideloadedDataManager.PLURALITY_MANY) {
+     return this.getCollectionRoot();
+    } else if (this.rootResourceDescriptor.plurality === SideloadedDataManager.PLURALITY_ONE) {
+      return this.getModelRoot();
+    }
+    return null;
+  }
+
+  public getCollectionRoot(): ResourceCollection {
+    const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(this.rootResourceDescriptor.type, this.rootResourceDescriptor.ids);
+    if (models.length === 0) return null;
+    return new ResourceCollection(models, null, this);
+  }
+
+  public getModelRoot(): ResourceModel {
+    return this.getResourceModelByTypeAndId(this.rootResourceDescriptor.type, this.rootResourceDescriptor.ids[0]);
   }
 
   public refetch(): Promise<any> {

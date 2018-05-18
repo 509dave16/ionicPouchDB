@@ -4,6 +4,7 @@ import {Database} from "../classes/Database";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
 import {SideloadedDataManager} from "../classes/SideloadedDataManager";
+import {Resource} from "../namespaces/Resource.namespace";
 
 @Injectable()
 export class RelationalService {
@@ -17,13 +18,13 @@ export class RelationalService {
       {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'authors'}}}
     ];
     this.db = new Database(schema, 'relationalDB', remote);
-
   }
 
   seedTestData(): Promise<ResourceModel>
   {
     return this.getTestData()
-      .then((author: ResourceModel) => {
+      .then((dm: SideloadedDataManager) => {
+        const author: ResourceModel = dm.getModelRoot();
         if (author) {
           return author;
         }
@@ -38,8 +39,7 @@ export class RelationalService {
             return this.db.save('authors', grmAuthor);
           })
           .then((dm: SideloadedDataManager) => {
-            const author = dm.getRoot();
-            return author.refetch();
+            return dm.getModelRoot();
           })
           .then((refetchedAuthor: ResourceModel) => {
             return refetchedAuthor;
@@ -50,7 +50,7 @@ export class RelationalService {
     ;
   }
 
-  getTestData(): Promise<ResourceModel>
+  getTestData(): Promise<SideloadedDataManager>
   {
     return this.db.findById('authors', 1);
   }

@@ -1,16 +1,21 @@
-import {ResourceEntity} from "./ResourceEntity";
-import {ResourceCollection} from "./ResourceCollection";
 import {objectClone, objectEqual} from "../utils/object.util";
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import RelationDescriptor = Resource.RelationDescriptor;
+import TypeSchema = Resource.TypeSchema;
 
-export class ResourceModel extends ResourceEntity{
+export class ResourceModel {
   private resource: any;
+  public type: string;
+  private dataManager: SideloadedDataManager;
+  private typeSchema: TypeSchema;
+
   private relationDesc: RelationDescriptor;
   constructor(resource: any, type: string, dataManager: SideloadedDataManager)
   {
-    super(type, dataManager);
+    this.type = type;
+    this.dataManager = dataManager;
+    this.typeSchema = this.dataManager.getTypeSchema(this.type);
     this.resource = objectClone(resource);
   }
 
@@ -26,13 +31,12 @@ export class ResourceModel extends ResourceEntity{
     return this.resource;
   }
 
-  setResource(resoure: any) {
-    this.resource = resoure;
+  setResource(resource: any) {
+    this.resource = resource;
   }
 
   get(relation) {
-    const { parent, parentResourceType } = this.relationDesc;
-    return this.dataManager.getRelation(parentResourceType, parent.id, relation);
+    return this.dataManager.getRelation(this.type, this.resource.id, relation);
   }
 
   getField(field) {
