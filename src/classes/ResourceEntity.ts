@@ -1,26 +1,16 @@
+import {SideloadedDataManager} from "./SideloadedDataManager";
+import {Resource} from "../namespaces/Resource.namespace";
 import TypeSchema = Resource.TypeSchema;
-import RelationalData = Resource.RelationalData;
-import {RelationalDB, ResourceQuery} from "./RelationalDB";
 
 export class ResourceEntity {
-  protected relationalData: RelationalData;
-  protected type: string;
-  protected schema: any[];
+  protected dataManager: SideloadedDataManager;
+  public type: string;
   protected typeSchema: TypeSchema;
-  protected query: ResourceQuery;
-  protected db: RelationalDB;
 
-  constructor(type: string, query: ResourceQuery, relationalData: RelationalData, schema: TypeSchema[], db: RelationalDB) {
+  constructor(type: string, dataManager: SideloadedDataManager) {
     this.type = type;
-    this.query = query;
-    this.relationalData = relationalData;
-    this.schema = schema;
-    this.typeSchema = this.getTypeSchema(type, this.schema);
-    this.db = db;
-  }
-
-  protected getTypeSchema(type: string, schema: TypeSchema[]): TypeSchema {
-    return schema.find((typeSchema: TypeSchema) => typeSchema.plural === type);
+    this.dataManager = dataManager;
+    this.typeSchema = this.dataManager.getTypeSchema(this.type);
   }
 
   protected hasRelation(relation) {
@@ -34,21 +24,5 @@ export class ResourceEntity {
       }
     }
     return null;
-  }
-
-  protected getResourcesByTypeAndIds(type, ids): any[] {
-    return ids.map(id => this.getResourceByTypeAndId(type, id)).filter(resource => resource !== undefined);
-  }
-
-  protected getResourceByTypeAndId(type, id): any {
-    return this.getResourcesByType(type).find(resource => resource.id === id);
-  }
-
-  protected getResourcesByType(type) {
-    return this.relationalData[type];
-  }
-
-  public refetch() {
-    return this.query();
   }
 }

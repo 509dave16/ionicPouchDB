@@ -1,56 +1,60 @@
-import {ResourceEntity} from "./ResourceEntity";
 import {ResourceModel} from "./ResourceModel";
-import {objectClone} from "../utils/object.util";
-import {RelationalDB, ResourceQuery} from "./RelationalDB";
+import {SideloadedDataManager} from "./SideloadedDataManager";
+import {Resource} from "../namespaces/Resource.namespace";
+import RelationDescriptor = Resource.RelationDescriptor;
 
-export class ResourceCollection extends ResourceEntity {
-  private resourceCollection: any[];
-  private ids: number[];
-
-  constructor(type: string, query: ResourceQuery, relationalData: Resource.RelationalData, ids: number[], schema: Resource.TypeSchema[], db: RelationalDB) {
-    super(type, query, relationalData, schema, db);
-    if (relationalData[type] === undefined) {
-      throw new Error(`type => ${type} is not defined in data.`);
-    }
-    this.resourceCollection = objectClone(this.getResourcesByTypeAndIds(type, ids));
-    this.ids = ids;
+export class ResourceCollection extends Array {
+  private dataManager: SideloadedDataManager;
+  private relationDesc: RelationDescriptor;
+  constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: SideloadedDataManager) {
+    super(...models);
+    this.relationDesc = relationDesc;
+    this.dataManager = dataManager;
   }
 
-  *[Symbol.iterator]() {
-    let numOfResourcesIterated = 0;
-    for (let index = 0; index < this.resourceCollection.length && numOfResourcesIterated < this.ids.length; index++) {
-      const resource = this.resourceCollection[index];
-      if (this.ids.length === 0) {
-        yield this.createResourceModel(resource);
-      } else if (this.ids.find(id => resource.id === id)) {
-        numOfResourcesIterated++;
-        yield this.createResourceModel(resource);
-      }
+  add(model: ResourceModel) {
+    const { parent, relationName } = this.relationDesc;
+    const ids: number[] = parent[relationName];
+    if (ids.find(id => id === model.id)) {
+      return;
     }
+    ids.push(model.id);
+    this.push(model);
+  }
+
+  remove(model: ResourceModel) {
+    const { parent, relationName } = this.relationDesc;
+    const ids: number[] = parent[relationName];
+    let indexOfId = ids.indexOf(model.id);
+    if (indexOfId === -1) {
+      return;
+    }
+    ids.splice(indexOfId, 1);
+    const indexOfModel: number = this.indexOf(model);
+    this.splice(indexOfModel, 1);
   }
 
   first(): ResourceModel {
-    if (this.resourceCollection.length) {
-      const resource = this.resourceCollection[0];
-      return this.createResourceModel(resource);
+    if (this.length) {
+      return this[0];
+    }
+    return null;
+  }
+
+  last(): ResourceModel {
+    if (this.length) {
+      return this[this.length - 1];
     }
     return null;
   }
 
   save(refetch: boolean = false): Promise<any> {
-    const writes: Promise<any>[] = this.resourceCollection.map((resource) => {
-      const model = this.createResourceModel(resource);
-      return model.save();
-    });
+    const writes: Promise<any>[] = this.map((model: ResourceModel) => this.dataManager.saveModel(model));
     return Promise.all(writes).then(() => {
       if (!refetch) {
         return this;
       }
-      return this.refetch();
+      return this.dataManager.refetch();
     });
-  }
-
-  private createResourceModel(resource: any): ResourceModel {
-    return new ResourceModel(this.type, this.query, this.relationalData, resource, this.schema, this.db);
   }
 }

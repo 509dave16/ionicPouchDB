@@ -1,12 +1,13 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
-import {RelationalDB} from "../classes/RelationalDB";
+import {Database} from "../classes/Database";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
+import {SideloadedDataManager} from "../classes/SideloadedDataManager";
 
 @Injectable()
 export class RelationalService {
-  public db: RelationalDB;
+  public db: Database;
   public data: any;
   constructor(public superLoginService: SuperLoginService){}
   init() {
@@ -15,7 +16,7 @@ export class RelationalService {
       {singular: 'author', plural: 'authors', relations: { books: {hasMany: 'books'}}},
       {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'authors'}}}
     ];
-    this.db = new RelationalDB(schema, 'relationalDB', remote);
+    this.db = new Database(schema, 'relationalDB', remote);
 
   }
 
@@ -30,13 +31,14 @@ export class RelationalService {
         const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
         const grmAuthor = { name: 'George R. R. Martin', id: 1, books: [6, 7] };
         return this.db.save('books', gotBook)
-          .then((book: ResourceModel) =>  {
+          .then(() =>  {
             return this.db.save('books', hkBook);
           })
-          .then((book: ResourceModel) => {
+          .then(() => {
             return this.db.save('authors', grmAuthor);
           })
-          .then((author: ResourceModel) => {
+          .then((dm: SideloadedDataManager) => {
+            const author = dm.getRoot();
             return author.refetch();
           })
           .then((refetchedAuthor: ResourceModel) => {

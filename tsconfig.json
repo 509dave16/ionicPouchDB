@@ -21,9 +21,6 @@
     "src/**/*.spec.ts",
     "src/**/__tests__/*.ts"
   ],
-  "files": [
-    "./src/namespaces/Resource.namespace.ts"
-  ],
   "compileOnSave": false,
   "atom": {
     "rewriteTsconfig": false
