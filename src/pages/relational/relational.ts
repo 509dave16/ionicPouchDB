@@ -3,6 +3,7 @@ import {AlertController, IonicPage, LoadingController, NavController, NavParams}
 import {RelationalService} from "../../services/relational.service";
 import {ResourceModel} from "../../classes/ResourceModel";
 import {ResourceCollection} from "../../classes/ResourceCollection";
+import {SideloadedDataManager} from "../../classes/SideloadedDataManager";
 
 /**
  * Generated class for the RelationalPage page.
@@ -19,8 +20,8 @@ import {ResourceCollection} from "../../classes/ResourceCollection";
 export class RelationalPage {
   authors: ResourceModel[] = [];
   books: ResourceCollection;
-  book: { id: number, title };
-  authorId: number;
+  book: { id, title };
+  authorId: string;
   constructor(
     public relationalService: RelationalService,
     public navCtrl: NavController,
@@ -30,9 +31,13 @@ export class RelationalPage {
   ) {
     this.book = { id: undefined, title: ''};
     relationalService.seedTestData().then((author: ResourceModel) => {
-      this.authors = [author];
-      this.books = author.get('books') as ResourceCollection;
+      this.initializeData(author);
     })
+  }
+
+  initializeData(author: ResourceModel) {
+    this.authors = [author];
+    this.books = author.get('books') as ResourceCollection;
   }
 
   ionViewDidLoad() {
@@ -55,9 +60,12 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Creating Book for Author'});
     loading.present();
-    await this.relationalService.addBookToAuthor(this.book, this.authorId);
-    this.book = { id: undefined, title: '' };
-    this.authorId = undefined;
+    this.book.id = parseInt(this.book.id);
+    const dm: SideloadedDataManager = await this.relationalService.addBookToAuthor(this.book, parseInt(this.authorId));
+    const author: ResourceModel = dm.getModelRoot();
+    this.initializeData(author);
+    this.book = { id: '', title: '' };
+    this.authorId = '';
     loading.dismiss();
   }
 }

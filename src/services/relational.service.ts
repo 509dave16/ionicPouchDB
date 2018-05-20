@@ -45,7 +45,7 @@ export class RelationalService {
     return this.db.findById('authors', 1);
   }
 
-  async addBookToAuthor(data: any, authorId: number) {
+  async addBookToAuthor(data: any, authorId: number): Promise<SideloadedDataManager> {
     const bookDM: SideloadedDataManager = await this.db.save('books', data);
     const book: ResourceModel = bookDM.getModelRoot();
     const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);

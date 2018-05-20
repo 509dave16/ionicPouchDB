@@ -50,6 +50,7 @@ export class SideloadedDataManager {
       let value: ResourceModel|ResourceCollection = null;
       if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_BELONGS_TO) {
         const resourceModel: ResourceModel = this.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
+        if (!resourceModel) return;
         resourceModel.setRelationDescriptor(descriptor);
       } else if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
         const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
@@ -80,7 +81,7 @@ export class SideloadedDataManager {
   }
 
   public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
-    const schema = this.getTypeSchema(model.type);
+    const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
     // 1. Add model to wrapped data cache if it doesn't exist
@@ -101,7 +102,7 @@ export class SideloadedDataManager {
   }
 
   public detachFromRelation(parentModel, relationName, model) {
-    const schema = this.getTypeSchema(model.type);
+    const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
 
@@ -122,11 +123,17 @@ export class SideloadedDataManager {
   }
 
   public getCollectionByType(type): ResourceModel[] {
+    if (this.wrappedData[type] === undefined) {
+      this.wrappedData[type] = [];
+    }
     return this.wrappedData[type];
   }
 
   public getResourceModelByTypeAndId(type, id): ResourceModel {
     const models: ResourceModel[] =  this.getCollectionByType(type);
+    if (!models) {
+      return null;
+    }
     let resourceModel= models.find((model) => model.id === id);
     if (!resourceModel) {
       return null;
@@ -138,32 +145,43 @@ export class SideloadedDataManager {
     return ids.map(id => this.getResourceModelByTypeAndId(type, id)).filter(resource => resource !== null);
   }
 
-  public refetch(): Promise<any> {
+  public refetch(): Promise<SideloadedDataManager> {
     return this.rootResourceDescriptor.query();
   }
 
-  public async saveModel(model: ResourceModel, refetch: boolean = false): Promise<ResourceModel> {
+  public async saveModel(model: ResourceModel, refetch: boolean = false): Promise<SideloadedDataManager> {
     const originalResourceIndex = this.sideloadedData[model.type].findIndex(resource => model.id === resource.id );
-    const originalResource = this.sideloadedData[model.type][originalResourceIndex];
-    const changed = objectEqual(model.getResource(), originalResource);
-    if (!changed) {
-      return model;
+    let changed = false;
+    if (originalResourceIndex === -1) {
+      changed = true;
+    } else {
+      const originalResource = this.sideloadedData[model.type][originalResourceIndex];
+      changed = !objectEqual(model.getResource(), originalResource);
     }
-    const data: any = await this.db.save(model.type, model.getResource());
+
+    if (!changed) {
+      return this;
+    }
+    const dm: SideloadedDataManager = await this.db.save(model.type, model.getResource());
+    const data = dm.getModelRoot().getResource();
     model.setResource(data);
     this.sideloadedData[model.type][originalResourceIndex] = data;
     if (!refetch) {
-      return model;
+      return this;
     }
     return this.refetch();
   }
 
-  async saveAll() {
+  async saveAll(refetch: boolean = false) {
     const writes: Promise<any>[] = [];
-    for (const type of Object.keys(this.sideloadedData)) {
-      this.sideloadedData[type].map((model: ResourceModel) => writes.push(this.saveModel(model)));
+    for (const type of Object.keys(this.wrappedData)) {
+      this.wrappedData[type].map((model: ResourceModel) => writes.push(this.saveModel(model)));
     }
-    return Promise.all(writes);
+    await Promise.all(writes);
+    if (!refetch) {
+      return this;
+    }
+    return this.refetch();
   }
 
   private getResourceType(descriptor) {

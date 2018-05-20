@@ -52,7 +52,7 @@ export class Database {
 
   save(type: string, object: any): Promise<SideloadedDataManager> {
     const query: ResourceQuery = () => this.findById(type, object.id);
-    const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
+    const descriptor: RootResourceDescriptor = { type, ids: [object.id], plurality: 'model', query};
     return this.wrapWithDataManager(descriptor, this.db.rel.save(type, object));
   }
 
