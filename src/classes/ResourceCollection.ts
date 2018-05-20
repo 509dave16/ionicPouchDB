@@ -3,7 +3,7 @@ import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import RelationDescriptor = Resource.RelationDescriptor;
 
-export class ResourceCollection extends Array {
+export class ResourceCollection extends Array<ResourceModel> {
   private dataManager: SideloadedDataManager;
   private relationDesc: RelationDescriptor;
   constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: SideloadedDataManager) {
@@ -54,13 +54,12 @@ export class ResourceCollection extends Array {
     return null;
   }
 
-  save(refetch: boolean = false): Promise<any> {
+  async save(refetch: boolean = false): Promise<any> {
     const writes: Promise<any>[] = this.map((model: ResourceModel) => this.dataManager.saveModel(model));
-    return Promise.all(writes).then(() => {
-      if (!refetch) {
-        return this;
-      }
-      return this.dataManager.refetch();
-    });
+    await Promise.all(writes);
+    if (!refetch) {
+      return this;
+    }
+    return this.dataManager.refetch();
   }
 }

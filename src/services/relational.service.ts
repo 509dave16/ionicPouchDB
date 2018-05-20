@@ -20,38 +20,38 @@ export class RelationalService {
     this.db = new Database(schema, 'relationalDB', remote);
   }
 
-  seedTestData(): Promise<ResourceModel>
+  async seedTestData(): Promise<ResourceModel>
   {
-    return this.getTestData()
-      .then((dm: SideloadedDataManager) => {
-        const author: ResourceModel = dm.getModelRoot();
-        if (author) {
-          return author;
-        }
-        const gotBook = { title: 'A Game of Thrones', id: 6, author: 1};
-        const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
-        const grmAuthor = { name: 'George R. R. Martin', id: 1, books: [6, 7] };
-        return this.db.save('books', gotBook)
-          .then(() =>  {
-            return this.db.save('books', hkBook);
-          })
-          .then(() => {
-            return this.db.save('authors', grmAuthor);
-          })
-          .then((dm: SideloadedDataManager) => {
-            return dm.getModelRoot();
-          })
-          .then((refetchedAuthor: ResourceModel) => {
-            return refetchedAuthor;
-          })
-          .catch(console.log.bind(console))
-        ;
-      })
-    ;
+    try {
+      let dm: SideloadedDataManager = await this.getTestData();
+      const author: ResourceModel = dm.getModelRoot();
+      if (author) {
+        return author;
+      }
+      const gotBook = { title: 'A Game of Thrones', id: 6, author: 1};
+      const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
+      const grmAuthor = { name: 'George R. R. Martin', id: 1, books: [6, 7] };
+      await this.db.save('books', gotBook);
+      await this.db.save('books', hkBook);
+      dm = await this.db.save('authors', grmAuthor);
+      return dm.getModelRoot();
+    } catch(error) {
+      console.error(error.message);
+    }
   }
 
   getTestData(): Promise<SideloadedDataManager>
   {
     return this.db.findById('authors', 1);
+  }
+
+  async addBookToAuthor(data: any, authorId: number) {
+    const bookDM: SideloadedDataManager = await this.db.save('books', data);
+    const book: ResourceModel = bookDM.getModelRoot();
+    const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);
+    const author: ResourceModel = authorDM.getModelRoot();
+    author.attach('books', book);
+    book.attach('author', author);
+    return authorDM.saveAll();
   }
 }

@@ -134,10 +134,9 @@ export class Database {
     return this.schema;
   }
 
-  private wrapWithDataManager(rootResoureDescriptor: RootResourceDescriptor, promise): Promise<SideloadedDataManager>
+  private async wrapWithDataManager(rootResoureDescriptor: RootResourceDescriptor, promise): Promise<SideloadedDataManager>
   {
-    return promise.then((data: SideloadedData) => {
-      return new SideloadedDataManager(rootResoureDescriptor, data, this);
-    });
+    const data: SideloadedData = await promise;
+    return new SideloadedDataManager(rootResoureDescriptor, data, this);
   }
 }
