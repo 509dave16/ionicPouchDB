@@ -24,10 +24,6 @@ export class PouchdbService {
       live: true,
       retry: true,
       continuous: true,
-      // auth: {
-      //   username: 'davidfall',
-      //   password: 'davidfall',
-      // },
     };
 
     this.db.replicate.to(remoteDB, options)

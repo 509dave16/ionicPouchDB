@@ -36,6 +36,15 @@ export namespace Resource {
     }
   }
 
+  export interface ParsedDocId {
+    type: string;
+    id: number
+  }
+
+  export interface MaxDocIdCache {
+    [typeKey: string] : number;
+  }
+
   export interface FindOptions {
     startKey?: number,
     endKey?: number,

@@ -6,6 +6,8 @@ import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import SideloadedData = Resource.SideloadedData;
 import RootResourceDescriptor = Resource.RootResourceDescriptor;
+import ParsedDocId = Resource.ParsedDocId;
+import MaxDocIdCache = Resource.MaxDocIdCache;
 
 export interface ResourceQuery {
   (): Promise<SideloadedDataManager>;
@@ -14,11 +16,13 @@ export interface ResourceQuery {
 export class Database {
   private schema: TypeSchema[];
   private db: RelationalDatabase;
+  private maxDocIdCache: MaxDocIdCache = {};
 
   constructor(schema: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
     this.schema = schema;
     this.db = new PouchDB(localName);
     this.db.setSchema(schema);
+    this.initializeMaxDocIdCache();
     const remoteDB = new PouchDB(remoteName);
 
     let options = {
@@ -50,10 +54,31 @@ export class Database {
     this.db.replicate.from(remoteDB, options);
   }
 
-  save(type: string, object: any): Promise<SideloadedDataManager> {
-    const query: ResourceQuery = () => this.findById(type, object.id);
-    const descriptor: RootResourceDescriptor = { type, ids: [object.id], plurality: 'model', query};
-    return this.wrapWithDataManager(descriptor, this.db.rel.save(type, object));
+  async save(type: string, object: any): Promise<SideloadedDataManager> {
+    let writeCompleted = false;
+    let promise = null;
+    let descriptor: RootResourceDescriptor = null;
+    while (!writeCompleted) {
+      try {
+        if (object.id === undefined) {
+          object.id = this.getNextMaxDocId(type);
+        }
+        const query: ResourceQuery = () => this.findById(type, object.id);
+        descriptor = { type, ids: [object.id], plurality: 'model', query};
+        const data: SideloadedData = await this.db.rel.save(type, object);
+        promise = Promise.resolve(data);
+        writeCompleted = true;
+      } catch(error) {
+        console.log(error);
+        if(error.name === 'conflict') {
+          object.id = undefined;
+        } else {
+          writeCompleted = true;
+          promise = Promise.resolve({});
+        }
+      }
+    }
+    return this.wrapWithDataManager(descriptor, promise);
   }
 
   findAll(type: string): Promise<SideloadedDataManager> {
@@ -113,12 +138,12 @@ export class Database {
     return this.wrapWithDataManager(descriptor, this.db.rel.removeAttachment(type, object, attachmentId));
   }
 
-  parseDocID(docID: number): string {
+  parseDocID(docID: string): ParsedDocId {
     return this.db.rel.parseDocID(docID);
   }
 
-  makeDocID(docID: number): string {
-    return this.db.rel.makeDocID(docID);
+  makeDocID(parsedDocID: ParsedDocId): string {
+    return this.db.rel.makeDocID(parsedDocID);
   }
 
   parseRelDocs(rootResourceDescriptor, pouchDocs: any): any {
@@ -134,9 +159,33 @@ export class Database {
     return this.schema;
   }
 
-  private async wrapWithDataManager(rootResoureDescriptor: RootResourceDescriptor, promise): Promise<SideloadedDataManager>
+  private async wrapWithDataManager(rootResoureDescriptor: RootResourceDescriptor, promise: Promise<any>): Promise<SideloadedDataManager>
   {
     const data: SideloadedData = await promise;
     return new SideloadedDataManager(rootResoureDescriptor, data, this);
+  }
+
+  private async initializeMaxDocIdCache() {
+    for(const schema of this.schema) {
+      const results = await this.db.allDocs({
+        endkey: schema.singular,
+        startkey: `${schema.singular}\ufff0`,
+        limit: 1,
+        descending: true
+      });
+      if (!results.rows.length) {
+        continue;
+      }
+      const parsedDocId: ParsedDocId = this.parseDocID(results.rows[0].id);
+      this.maxDocIdCache[schema.plural] = parsedDocId.id;
+    }
+    console.log(this.maxDocIdCache);
+  }
+
+  private getNextMaxDocId(type: string): number {
+    if (this.maxDocIdCache[type] === undefined) {
+      throw new Error(`type ${type} does not exist as key in cache.`);
+    }
+    return this.maxDocIdCache[type] = ++this.maxDocIdCache[type];
   }
 }

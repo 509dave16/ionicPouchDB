@@ -20,7 +20,7 @@ import {SideloadedDataManager} from "../../classes/SideloadedDataManager";
 export class RelationalPage {
   authors: ResourceModel[] = [];
   books: ResourceCollection;
-  book: { id, title };
+  bookTitle: string;
   authorId: string;
   constructor(
     public relationalService: RelationalService,
@@ -29,10 +29,13 @@ export class RelationalPage {
     public loadCtrl: LoadingController,
     public alertCtrl: AlertController,
   ) {
-    this.book = { id: undefined, title: ''};
-    relationalService.seedTestData().then((author: ResourceModel) => {
-      this.initializeData(author);
-    })
+    this.init();
+  }
+
+  async init() {
+    const author: ResourceModel = await this.relationalService.seedTestData();
+    this.initializeData(author);
+    this.relationalService.troubleshoot();
   }
 
   initializeData(author: ResourceModel) {
@@ -47,8 +50,7 @@ export class RelationalPage {
   async addBookToAuthor() {
     let errorMessage = '';
     if (!this.authorId) errorMessage += 'Must enter a number for Author Id\n';
-    if (!this.book.id) errorMessage += 'Must enter a number for Book Id\n';
-    if (!this.book.title) errorMessage += 'Must enter a title for the book\n';
+    if (!this.bookTitle) errorMessage += 'Must enter a title for the book\n';
     if (errorMessage) {
       let alert = this.alertCtrl.create({
         title: 'Validation Errors',
@@ -60,11 +62,10 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Creating Book for Author'});
     loading.present();
-    this.book.id = parseInt(this.book.id);
-    const dm: SideloadedDataManager = await this.relationalService.addBookToAuthor(this.book, parseInt(this.authorId));
+    const dm: SideloadedDataManager = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
     const author: ResourceModel = dm.getModelRoot();
     this.initializeData(author);
-    this.book = { id: '', title: '' };
+    this.bookTitle = '';
     this.authorId = '';
     loading.dismiss();
   }

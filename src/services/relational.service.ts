@@ -10,38 +10,39 @@ import {Resource} from "../namespaces/Resource.namespace";
 export class RelationalService {
   public db: Database;
   public data: any;
-  constructor(public superLoginService: SuperLoginService){}
+
+  constructor(public superLoginService: SuperLoginService) {
+  }
+
   init() {
     const remote = this.superLoginService.SuperLoginClient.getDbUrl('relational');
     const schema: TypeSchema[] = [
-      {singular: 'author', plural: 'authors', relations: { books: {hasMany: 'books'}}},
+      {singular: 'author', plural: 'authors', relations: {books: {hasMany: 'books'}}},
       {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'authors'}}}
     ];
     this.db = new Database(schema, 'relationalDB', remote);
   }
 
-  async seedTestData(): Promise<ResourceModel>
-  {
+  async seedTestData(): Promise<ResourceModel> {
     try {
       let dm: SideloadedDataManager = await this.getTestData();
       const author: ResourceModel = dm.getModelRoot();
       if (author) {
         return author;
       }
-      const gotBook = { title: 'A Game of Thrones', id: 6, author: 1};
+      const gotBook = {title: 'A Game of Thrones', id: 6, author: 1};
       const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
-      const grmAuthor = { name: 'George R. R. Martin', id: 1, books: [6, 7] };
+      const grmAuthor = {name: 'George R. R. Martin', id: 1, books: [6, 7]};
       await this.db.save('books', gotBook);
       await this.db.save('books', hkBook);
       dm = await this.db.save('authors', grmAuthor);
       return dm.getModelRoot();
-    } catch(error) {
+    } catch (error) {
       console.error(error.message);
     }
   }
 
-  getTestData(): Promise<SideloadedDataManager>
-  {
+  getTestData(): Promise<SideloadedDataManager> {
     return this.db.findById('authors', 1);
   }
 
@@ -53,5 +54,10 @@ export class RelationalService {
     author.attach('books', book);
     book.attach('author', author);
     return authorDM.saveAll();
+  }
+
+  async troubleshoot() {
+    const parsedId: any = this.db.parseDocID('book_1_0000000000000012');
+    console.log(`Book ID Parsed: ${parsedId.id}`);
   }
 }

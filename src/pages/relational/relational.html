@@ -38,12 +38,8 @@
         <ion-input type="number" [(ngModel)]="authorId" name="authorId"></ion-input>
       </ion-item>
       <ion-item>
-        <ion-label>Book Id</ion-label>
-        <ion-input type="number" [(ngModel)]="book.id" name="bookId"></ion-input>
-      </ion-item>
-      <ion-item>
         <ion-label>Book Title</ion-label>
-        <ion-textarea [(ngModel)]="book.title" name="title"></ion-textarea>
+        <ion-textarea [(ngModel)]="bookTitle" name="title"></ion-textarea>
       </ion-item>
       <button ion-button type="submit" block>Add Book To Author</button>
     </form>
