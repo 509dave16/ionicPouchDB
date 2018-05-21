@@ -34,6 +34,22 @@ export class SideloadedDataManager {
       this.wrappedData[type] = this.sideloadedData[type].map(resource => new ResourceModel(resource, type, this));
   }
 
+  private hasRelation(type: string, relation: string) {
+    return Object.keys(this.getTypeSchema(type).relations).find( typeRelation => typeRelation === relation);
+  }
+
+  private errorIfRelationDoesntExist(type: string, relation: string) {
+    if (!this.hasRelation(type, relation)) {
+      throw new Error(`Model does not have relation ${relation}`);
+    }
+  }
+
+  private errorIfValueIsUndefined(name, value) {
+    if (!value) {
+      throw new Error(`${name} is undefined.`);
+    }
+  }
+
   private cacheRelations() {
     this.relationCache = {};
     for (const type of  Object.keys(this.wrappedData)) {
@@ -43,6 +59,7 @@ export class SideloadedDataManager {
   }
 
   private cacheModelRelations(model: ResourceModel) {
+    this.errorIfValueIsUndefined('model', model);
     const schema = this.getTypeSchema(model.type);
     for (const relationName of Object.keys(schema.relations)) {
       const relation = schema.relations[relationName];
@@ -52,6 +69,7 @@ export class SideloadedDataManager {
         const resourceModel: ResourceModel = this.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
         if (!resourceModel) return;
         resourceModel.setRelationDescriptor(descriptor);
+        value = resourceModel;
       } else if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
         const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
         value = new ResourceCollection(models, descriptor, this);
@@ -61,6 +79,9 @@ export class SideloadedDataManager {
   }
 
   private setRelation(parent: ResourceModel, relation: string, value: ResourceModel|ResourceCollection) {
+    this.errorIfValueIsUndefined('parent Model', parent);
+    this.errorIfValueIsUndefined('child Model/Collection', value);
+    this.errorIfRelationDoesntExist(parent.type, relation);
     const { type, id } = parent;
     if (this.relationCache[type] === undefined) this.relationCache[type] = {};
     if (this.relationCache[type][id] === undefined) this.relationCache[type][id] = {};
@@ -68,6 +89,8 @@ export class SideloadedDataManager {
   }
 
   private unsetRelation(parent: ResourceModel, relation: string) {
+    this.errorIfValueIsUndefined('parent Model', parent);
+    this.errorIfRelationDoesntExist(parent.type, relation);
     const { type, id } = parent;
     if (this.relationCache[type] === undefined) this.relationCache[type] = {};
     if (this.relationCache[type][id] === undefined) this.relationCache[type][id] = {};
@@ -75,12 +98,16 @@ export class SideloadedDataManager {
   }
 
   public getRelation(type: string, id: number, relation: string): ResourceModel|ResourceCollection {
+    this.errorIfRelationDoesntExist(type, relation);
     if (this.relationCache[type] === undefined) return null;
     if (this.relationCache[type][id] === undefined) return null;
     return this.relationCache[type][id][relation];
   }
 
   public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
+    this.errorIfValueIsUndefined('parent model', parentModel);
+    this.errorIfValueIsUndefined('child model', model);
+
     const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
@@ -102,6 +129,8 @@ export class SideloadedDataManager {
   }
 
   public detachFromRelation(parentModel, relationName, model) {
+    this.errorIfValueIsUndefined('parent model', parentModel);
+    this.errorIfValueIsUndefined('child model', model);
     const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
@@ -122,7 +151,7 @@ export class SideloadedDataManager {
     return this.db.getSchema().find((typeSchema: TypeSchema) => typeSchema.plural === type);
   }
 
-  public getCollectionByType(type): ResourceModel[] {
+  private getCollectionByType(type): ResourceModel[] {
     if (this.wrappedData[type] === undefined) {
       this.wrappedData[type] = [];
     }
@@ -150,6 +179,7 @@ export class SideloadedDataManager {
   }
 
   public async saveModel(model: ResourceModel, refetch: boolean = false): Promise<SideloadedDataManager> {
+    this.errorIfValueIsUndefined('model', model);
     const originalResourceIndex = this.sideloadedData[model.type].findIndex(resource => model.id === resource.id );
     let changed = false;
     if (originalResourceIndex === -1) {

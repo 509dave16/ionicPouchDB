@@ -49,8 +49,8 @@ export class RelationalPage {
 
   async addBookToAuthor() {
     let errorMessage = '';
-    if (!this.authorId) errorMessage += 'Must enter a number for Author Id\n';
-    if (!this.bookTitle) errorMessage += 'Must enter a title for the book\n';
+    if (!this.authorId) { errorMessage += 'Must enter a number for Author Id\n'; }
+    if (!this.bookTitle) { errorMessage += 'Must enter a title for the book\n'; }
     if (errorMessage) {
       let alert = this.alertCtrl.create({
         title: 'Validation Errors',

@@ -35,25 +35,11 @@ export class ResourceModel {
     this.resource = resource;
   }
 
-  protected hasRelation(relation: string) {
-    return Object.keys(this.typeSchema.relations).find( typeRelation => typeRelation === relation);
-  }
-
-  errorIfRelationDoesntExist(relation: string) {
-    if (!this.hasRelation(relation)) {
-      throw new Error(`Model does not have relation ${relation}`);
-    }
-  }
-
   get(relation: string) {
-    this.errorIfRelationDoesntExist(relation);
     return this.dataManager.getRelation(this.type, this.resource.id, relation);
   }
 
   attach(relation: string, model: ResourceModel) {
-    if (!this.hasRelation(relation)) {
-      throw new Error(`Model does not have relation ${relation}`);
-    }
     this.dataManager.attachToRelation(this, relation, model);
   }
 
