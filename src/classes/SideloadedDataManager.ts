@@ -117,7 +117,7 @@ export class SideloadedDataManager {
     // 2. Add model to parent
     if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, model.id);
-      this.setRelation(model, relationName, model);
+      this.setRelation(parentModel, relationName, model);
     } else if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
       const modelExists = collection.find((resourceModel: ResourceModel) => resourceModel.id === model.id );
@@ -137,7 +137,7 @@ export class SideloadedDataManager {
 
     if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, null);
-      this.unsetRelation(model, relationName);
+      this.unsetRelation(parentModel, relationName);
     } else if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
       const modelIndex= collection.findIndex((resourceModel: ResourceModel) => resourceModel.id === model.id );
