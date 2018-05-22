@@ -46,16 +46,18 @@ export class RelationData {
     for (const relationName of Object.keys(schema.relations)) {
       const relation = schema.relations[relationName];
       const descriptor: RelationDescriptor = this.getRelationDescriptor(model, relationName, relation);
+      let value: ResourceCollection|ResourceModel = null;
       if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
         const resourceModel: ResourceModel = this.dm.sideloadeModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
         if (!resourceModel) return;
         resourceModel.setRelationDescriptor(descriptor);
-        this.setRelation(model, relationName, resourceModel);
+        value = resourceModel;
       } else if (descriptor.relationType === RelationData.RELATION_TYPE_HAS_MANY) {
         const models: ResourceModel[] = this.dm.sideloadeModelData.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
         const resourceCollection: ResourceCollection = new ResourceCollection(models, descriptor, this.dm);
-        this.setRelation(model, relationName, resourceCollection);
+        value = resourceCollection;
       }
+      this.setRelation(model, relationName, value);
     }
   }
 
@@ -113,7 +115,7 @@ export class RelationData {
   public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number) {
     this.errorIfValueIsUndefined('parent model', parentModel);
     let modelId: number;
-    if (isNaN(modelOrId) && modelOrId !== undefined) {
+    if (modelOrId !== undefined && (modelOrId as ResourceModel).id !== undefined) {
       const model = modelOrId as ResourceModel;
       this.errorIfValueIsUndefined('child model', model.id);
       modelId = model.id;
