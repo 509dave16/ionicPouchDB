@@ -14,14 +14,16 @@ export class ResourceCollection {
     this.dataManager = dataManager;
   }
 
-  add(model: ResourceModel) {
+  add(model: ResourceModel): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
     this.dataManager.attachToRelation(parent, relationName, model);
+    return this;
   }
 
-  remove(modelOrId: ResourceModel|number) {
+  remove(modelOrId: ResourceModel|number): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
     this.dataManager.detachFromRelation(parent, relationName, modelOrId);
+    return this;
   }
 
   first(): ResourceModel {

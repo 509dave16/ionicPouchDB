@@ -87,7 +87,7 @@ export class RelationData {
     return this.relationCache[type][id][relation];
   }
 
-  public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel): ResourceModel {
+  public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
     this.errorIfValueIsUndefined('parent model', parentModel);
     this.errorIfValueIsUndefined('child model', model);
     this.errorIfValueIsUndefined('child model id', model.id);
@@ -110,10 +110,9 @@ export class RelationData {
         parentModel.getField(relationName).push(model.id);
       }
     }
-    return parentModel;
   }
 
-  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number): ResourceModel {
+  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number) {
     this.errorIfValueIsUndefined('parent model', parentModel);
     let modelId: number;
     if (modelOrId !== undefined && (modelOrId as ResourceModel).id !== undefined) {
@@ -138,7 +137,6 @@ export class RelationData {
       const idIndex = parentModel.getField(relationName).findIndex((id: number) => id === modelId);
       if (idIndex !== -1) { parentModel.getField(relationName).splice(idIndex, 1); }
     }
-    return parentModel;
   }
 
   private getResourceType(descriptor) {

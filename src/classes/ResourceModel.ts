@@ -42,10 +42,12 @@ export class ResourceModel {
 
   attach(relation: string, model: ResourceModel): ResourceModel {
     this.dataManager.attachToRelation(this, relation, model);
+    return this;
   }
 
   detach(relation: string, modelOrId: ResourceModel|number): ResourceModel {
     this.dataManager.detachFromRelation(this, relation, modelOrId);
+    return this;
   }
 
   getField(field) {
