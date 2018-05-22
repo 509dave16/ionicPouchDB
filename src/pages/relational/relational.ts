@@ -31,6 +31,8 @@ export class RelationalPage {
     public alertCtrl: AlertController,
   ) {
     this.init();
+    const dump = 'here';
+    const dump2 = 'and here';
   }
 
   async init() {

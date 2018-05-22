@@ -167,13 +167,13 @@ export class Database {
 
   private async wrapWithResourceModel(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceModel> {
     const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
+    const dm: SideloadedDataManager = await new SideloadedDataManager(descriptor, data, this);
     return dm.getModelRoot();
   }
 
   private async wrapWithResourceCollection(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceCollection> {
     const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
+    const dm: SideloadedDataManager = await new SideloadedDataManager(descriptor, data, this);
     return dm.getCollectionRoot();
   }
 
