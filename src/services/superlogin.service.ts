@@ -1,6 +1,7 @@
 import {Injectable} from "../../node_modules/@angular/core";
 import {SuperLoginClient} from "superlogin-client";
 import superlogin from "superlogin-client";
+import {AuthConfig} from "../config/auth.dist";
 
 @Injectable()
 export class SuperLoginService {
@@ -8,10 +9,14 @@ export class SuperLoginService {
   public SuperLoginClient: SuperLoginClient;
 
   constructor() {
+    let url = AuthConfig.host;
+    if (AuthConfig.port) {
+      url += AuthConfig.port;
+    }
     this.SuperLoginClient = superlogin;
     const config = {
       // An optional URL to API server, by default a current window location is used.
-      serverUrl: 'http://www.superlogin-local.com:3000',
+      serverUrl: url,
       // The base URL for the SuperLogin routes with leading and trailing slashes (defaults to '/auth')
       // baseUrl: '/auth',
       // Specific endpoint for social authentication and social link popups (defaults to `${location.origin}${baseUrl}`)

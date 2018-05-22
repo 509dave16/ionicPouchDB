@@ -24,12 +24,44 @@
       </ion-item-group>
     </ng-container>
     <ng-container *ngIf="books">
-      <ion-item-group>
-        <ion-item-divider color="light">Book</ion-item-divider>
-        <ion-item *ngFor="let book of books ">
-          <div>Id: {{ book.getField('id') }}</div>
-          <div>Title: {{ book.getField('title') }}</div>
-        </ion-item>
-      </ion-item-group>
+      <ion-item-divider color="light">Books</ion-item-divider>
+      <ion-scroll scrollY="true" style="height: 200px">
+        <ion-list>
+          <ion-item-group>
+            <ion-item *ngFor="let book of books ">
+              <div>Id: {{ book.getField('id') }}</div>
+              <div>Title: {{ book.getField('title') }}</div>
+            </ion-item>
+          </ion-item-group>
+        </ion-list>
+      </ion-scroll>
     </ng-container>
+  <ion-item-group>
+    <ion-item-divider color="light">Add Book To Author</ion-item-divider>
+    <form (ngSubmit)="addBookToAuthor()">
+      <ion-item>
+        <ion-label>Author Id</ion-label>
+        <ion-input type="number" [(ngModel)]="authorId" name="authorId"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label>Book Title</ion-label>
+        <ion-textarea [(ngModel)]="bookTitle" name="title"></ion-textarea>
+      </ion-item>
+      <button ion-button type="submit" block>Submit</button>
+    </form>
+  </ion-item-group>
+  <ion-item-group>
+    <ion-item-divider color="light">Remove Book From Author</ion-item-divider>
+    <form (ngSubmit)="removeBookFromAuthor()">
+      <ion-item>
+        <ion-label>Author Id</ion-label>
+        <ion-input type="number" [(ngModel)]="detachAuthorId" name="detachAuthorId"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label>Book Id</ion-label>
+        <ion-input [(ngModel)]="detachBookId" name="detachBookId"></ion-input>
+      </ion-item>
+      <button ion-button type="submit" block>Submit</button>
+    </form>
+  </ion-item-group>
 </ion-content>

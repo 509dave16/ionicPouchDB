@@ -1,6 +1,5 @@
 import {Injectable} from "@angular/core";
 import PouchDB from 'pouchdb';
-import {LoggingUtil} from "../utils/logging.util";
 import {NetworkService} from "./network.service";
 
 export interface Todo {
@@ -24,10 +23,6 @@ export class PouchdbService {
       live: true,
       retry: true,
       continuous: true,
-      // auth: {
-      //   username: 'davidfall',
-      //   password: 'davidfall',
-      // },
     };
 
     this.db.replicate.to(remoteDB, options)
