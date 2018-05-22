@@ -24,7 +24,7 @@ export class RelationalService {
   }
 
   async seedTestData(): Promise<ResourceModel> {
-    // try {
+    try {
       const author: ResourceModel = await this.getTestData();
       if (author) {
         return author;
@@ -35,9 +35,9 @@ export class RelationalService {
       await this.db.save('books', gotBook);
       await this.db.save('books', hkBook);
       return this.db.save('authors', grmAuthor);
-    // } catch (error) {
-    //   console.error(error.message);
-    // }
+    } catch (error) {
+      console.error(error.message);
+    }
   }
 
   getTestData(): Promise<ResourceModel> {
