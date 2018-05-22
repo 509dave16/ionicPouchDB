@@ -40,11 +40,11 @@ export class SideloadedDataManager {
     return this.relationData.getRelation(type, id, relation);
   }
 
-  public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
+  public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel): ResourceModel {
     return this.relationData.attachToRelation(parentModel, relationName, model);
   }
 
-  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number) {
+  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number): ResourceModel {
     return this.relationData.detachFromRelation(parentModel, relationName, modelOrId);
   }
 

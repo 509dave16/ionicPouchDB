@@ -40,11 +40,11 @@ export class ResourceModel {
     return this.dataManager.getRelation(this.type, this.resource.id, relation);
   }
 
-  attach(relation: string, model: ResourceModel) {
+  attach(relation: string, model: ResourceModel): ResourceModel {
     this.dataManager.attachToRelation(this, relation, model);
   }
 
-  detach(relation: string, modelOrId: ResourceModel|number) {
+  detach(relation: string, modelOrId: ResourceModel|number): ResourceModel {
     this.dataManager.detachFromRelation(this, relation, modelOrId);
   }
 
