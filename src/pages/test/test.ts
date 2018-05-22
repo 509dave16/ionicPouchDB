@@ -3,7 +3,6 @@ import { NavController } from 'ionic-angular';
 import {PouchdbService, Todo} from "../../services/pouchdb.service";
 import uuidv4 from 'uuid/v4';
 import AllDocsResponse = PouchDB.Core.AllDocsResponse;
-import PouchDB from 'pouchdb';
 
 @Component({
   selector: 'page-test',

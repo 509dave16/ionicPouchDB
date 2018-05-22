@@ -2,42 +2,26 @@ import {ResourceModel} from "./ResourceModel";
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import RelationDescriptor = Resource.RelationDescriptor;
+import SaveOptions = Resource.SaveOptions;
 
-export class ResourceCollection extends Array<ResourceModel> {
+export class ResourceCollection {
   private dataManager: SideloadedDataManager;
-  private relationDesc: RelationDescriptor;
+  private readonly  relationDesc: RelationDescriptor;
+  private readonly models: ResourceModel[];
   constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: SideloadedDataManager) {
-    super(...models);
+    this.models = models;
     this.relationDesc = relationDesc;
     this.dataManager = dataManager;
   }
 
   add(model: ResourceModel) {
-    this.push(model);
-    if (!this.relationDesc) {
-      return;
-    }
     const { parent, relationName } = this.relationDesc;
-    const ids: number[] = parent[relationName];
-    if (ids.find(id => id === model.id)) {
-      return;
-    }
-    ids.push(model.id);
+    this.dataManager.attachToRelation(parent, relationName, model);
   }
 
-  remove(model: ResourceModel) {
-    const indexOfModel: number = this.indexOf(model);
-    this.splice(indexOfModel, 1);
-    if (!this.relationDesc) {
-      return;
-    }
+  remove(modelOrId: ResourceModel|number) {
     const { parent, relationName } = this.relationDesc;
-    const ids: number[] = parent[relationName];
-    let indexOfId = ids.indexOf(model.id);
-    if (indexOfId === -1) {
-      return;
-    }
-    ids.splice(indexOfId, 1);
+    this.dataManager.detachFromRelation(parent, relationName, modelOrId);
   }
 
   first(): ResourceModel {
@@ -54,12 +38,38 @@ export class ResourceCollection extends Array<ResourceModel> {
     return null;
   }
 
-  async save(refetch: boolean = false): Promise<any> {
-    const writes: Promise<any>[] = this.map((model: ResourceModel) => this.dataManager.saveModel(model));
-    await Promise.all(writes);
-    if (!refetch) {
-      return this;
+  async save(options: SaveOptions = { refetch: false, related: false}): Promise<any> {
+    return this.dataManager.save(options);
+  }
+
+  /** Public Array Member Implementations **/
+  *[Symbol.iterator]() {
+    for (let index = 0; index < this.models.length; index++) {
+      yield this.models[index];
     }
-    return this.dataManager.refetch();
+  }
+
+  get length(): number {
+    return this.models.length;
+  }
+
+  map<U>(callback, thisArg?: any): U[] {
+    return this.models.map<U>(callback, thisArg);
+  }
+
+  find(callback, thisArg?: any) {
+    return this.models.find(callback, thisArg);
+  }
+
+  findIndex(callback, thisArg?: any) {
+    return this.models.findIndex(callback, thisArg)
+  }
+
+  /** Private Array Member Implementations **/
+  _push(model: ResourceModel) {
+    this.models.push(model);
+  }
+  _splice(start: number, deleteCount?: number) {
+    this.models.splice(start, deleteCount);
   }
 }

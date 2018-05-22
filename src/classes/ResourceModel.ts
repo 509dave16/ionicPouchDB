@@ -1,8 +1,9 @@
-import {objectClone, objectEqual} from "../utils/object.util";
+import {objectClone} from "../utils/object.util";
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import RelationDescriptor = Resource.RelationDescriptor;
 import TypeSchema = Resource.TypeSchema;
+import SaveOptions = Resource.SaveOptions;
 
 export class ResourceModel {
   private resource: any;
@@ -43,8 +44,8 @@ export class ResourceModel {
     this.dataManager.attachToRelation(this, relation, model);
   }
 
-  detach(relation: string, model: ResourceModel) {
-    this.dataManager.detachFromRelation(this, relation, model);
+  detach(relation: string, modelOrId: ResourceModel|number) {
+    this.dataManager.detachFromRelation(this, relation, modelOrId);
   }
 
   getField(field) {
@@ -55,7 +56,7 @@ export class ResourceModel {
     this.resource[field] = value;
   }
 
-  save(refetch: boolean = false): Promise<any> {
-    return this.dataManager.saveModel(this, refetch);
+  save(options: SaveOptions = { refetch: false, related: false }): Promise<any> {
+    return this.dataManager.save(options);
   }
 }

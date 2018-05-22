@@ -22,6 +22,8 @@ export class RelationalPage {
   books: ResourceCollection;
   bookTitle: string;
   authorId: string;
+  detachAuthorId: string;
+  detachBookId: string;
   constructor(
     public relationalService: RelationalService,
     public navCtrl: NavController,
@@ -38,9 +40,11 @@ export class RelationalPage {
     this.relationalService.troubleshoot();
   }
 
-  initializeData(author: ResourceModel) {
+  async initializeData(author: ResourceModel) {
     this.authors = [author];
-    this.books = author.get('books') as ResourceCollection;
+    // this.books = author.get('books') as ResourceCollection;
+    const dm: SideloadedDataManager = await this.relationalService.getBooks();
+    this.books = dm.getCollectionRoot();
   }
 
   ionViewDidLoad() {
@@ -67,6 +71,29 @@ export class RelationalPage {
     this.initializeData(author);
     this.bookTitle = '';
     this.authorId = '';
+    loading.dismiss();
+  }
+
+  async removeBookFromAuthor() {
+    let errorMessage = '';
+    if (!this.detachAuthorId) { errorMessage += 'Must enter a number for Author Id\n'; }
+    if (!this.detachBookId) { errorMessage += 'Must enter a number for the Book Id\n'; }
+    if (errorMessage) {
+      let alert = this.alertCtrl.create({
+        title: 'Validation Errors',
+        subTitle: errorMessage,
+        buttons: ['Dismiss']
+      });
+      alert.present();
+      return;
+    }
+    const loading = this.loadCtrl.create({ content: 'Removing Book from Author'});
+    loading.present();
+    const dm: SideloadedDataManager = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
+    const author: ResourceModel = dm.getModelRoot();
+    this.initializeData(author);
+    this.detachBookId = '';
+    this.detachAuthorId = '';
     loading.dismiss();
   }
 }

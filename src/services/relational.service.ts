@@ -5,6 +5,7 @@ import TypeSchema = Resource.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
 import {SideloadedDataManager} from "../classes/SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
+import {ResourceCollection} from "../classes/ResourceCollection";
 
 @Injectable()
 export class RelationalService {
@@ -46,14 +47,26 @@ export class RelationalService {
     return this.db.findById('authors', 1);
   }
 
+  getBooks(): Promise<SideloadedDataManager> {
+    return this.db.findAll('books');
+  }
+
   async addBookToAuthor(data: any, authorId: number): Promise<SideloadedDataManager> {
     const bookDM: SideloadedDataManager = await this.db.save('books', data);
     const book: ResourceModel = bookDM.getModelRoot();
     const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);
     const author: ResourceModel = authorDM.getModelRoot();
-    author.attach('books', book);
+    const books: ResourceCollection = author.get('books') as ResourceCollection;
+    books.add(book);
     book.attach('author', author);
-    return authorDM.saveAll();
+    return author.save({ related: true });
+  }
+
+  async removeBookFromAuthor(bookId: number, authorId: number) {
+    const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);
+    const author: ResourceModel = authorDM.getModelRoot();
+    author.detach('books', bookId);
+    return author.save({related: true});
   }
 
   async troubleshoot() {

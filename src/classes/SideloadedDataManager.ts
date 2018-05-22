@@ -7,6 +7,7 @@ import {ResourceCollection} from "./ResourceCollection";
 import {ResourceModel} from "./ResourceModel";
 import {objectEqual} from "../utils/object.util";
 import RelationDescriptor = Resource.RelationDescriptor;
+import SaveOptions = Resource.SaveOptions;
 
 
 export class SideloadedDataManager {
@@ -18,13 +19,19 @@ export class SideloadedDataManager {
   protected rootResourceDescriptor: RootResourceDescriptor;
   protected sideloadedData: SideloadedData;
   protected wrappedData: any = {};
-  protected relationCache: any;
+  protected relationCache: any = {};
   protected db: Database;
 
   constructor(rootDescriptor: RootResourceDescriptor, sideloadedData: SideloadedData, db: Database) {
     this.rootResourceDescriptor = rootDescriptor;
     this.sideloadedData = sideloadedData;
     this.db = db;
+    this.init();
+  }
+
+  private init() {
+    this.wrappedData = {};
+    this.relationCache = {};
     this.wrapSideloadedData();
     this.cacheRelations();
   }
@@ -107,13 +114,14 @@ export class SideloadedDataManager {
   public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
     this.errorIfValueIsUndefined('parent model', parentModel);
     this.errorIfValueIsUndefined('child model', model);
+    this.errorIfValueIsUndefined('child model id', model.id);
 
     const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
     // 1. Add model to wrapped data cache if it doesn't exist
     const resourceModel: ResourceModel = this.getResourceModelByTypeAndId(descriptor.relationResourceType, model.id);
-    if (!resourceModel) this.getCollectionByType(model.type).push(model);
+    if (!resourceModel) { this.getCollectionByType(model.type).push(model); }
     // 2. Add model to parent
     if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, model.id);
@@ -122,15 +130,23 @@ export class SideloadedDataManager {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
       const modelExists = collection.find((resourceModel: ResourceModel) => resourceModel.id === model.id );
       if (!modelExists) {
-        collection.push(model);
+        collection._push(model);
         parentModel.getField(relationName).push(model.id);
       }
     }
   }
 
-  public detachFromRelation(parentModel, relationName, model) {
+  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number) {
     this.errorIfValueIsUndefined('parent model', parentModel);
-    this.errorIfValueIsUndefined('child model', model);
+    let modelId: number;
+    if (isNaN(modelOrId) && modelOrId !== undefined) {
+      const model = modelOrId as ResourceModel;
+      this.errorIfValueIsUndefined('child model', model.id);
+      modelId = model.id;
+    } else if(modelOrId !== undefined) {
+      modelId = modelOrId as number;
+    }
+    this.errorIfValueIsUndefined('modelOrId', modelOrId);
     const schema = this.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
@@ -140,10 +156,10 @@ export class SideloadedDataManager {
       this.unsetRelation(parentModel, relationName);
     } else if (descriptor.relationType === SideloadedDataManager.RELATION_TYPE_HAS_MANY) {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
-      const modelIndex= collection.findIndex((resourceModel: ResourceModel) => resourceModel.id === model.id );
-      if (modelIndex !== -1) collection.splice(modelIndex, 1);
-      const idIndex = parentModel.getField(relationName).findIndex((id: number) => id === model.id);
-      if (idIndex !== -1) parentModel.getField(relationName).splice(idIndex, 1);
+      const modelIndex= collection.findIndex((resourceModel: ResourceModel) => resourceModel.id === modelId );
+      if (modelIndex !== -1) { collection._splice(modelIndex, 1); }
+      const idIndex = parentModel.getField(relationName).findIndex((id: number) => id === modelId);
+      if (idIndex !== -1) { parentModel.getField(relationName).splice(idIndex, 1); }
     }
   }
 
@@ -178,7 +194,24 @@ export class SideloadedDataManager {
     return this.rootResourceDescriptor.query();
   }
 
-  public async saveModel(model: ResourceModel, refetch: boolean = false): Promise<SideloadedDataManager> {
+  public async save(options: SaveOptions): Promise<SideloadedDataManager> {
+    const modelOrCollection: ResourceModel|ResourceCollection = this.getRoot();
+    if (options.related) {
+      await this.saveAll();
+    } else if (modelOrCollection instanceof  ResourceModel) {
+      await this.saveModel(modelOrCollection);
+    } else {
+      const writes: Promise<any>[] = modelOrCollection.map((model: ResourceModel) => this.saveModel(model));
+      await Promise.all(writes);
+    }
+
+    if (!options.refetch) {
+      return this;
+    }
+    return this.refetch();
+  }
+
+  private async saveModel(model: ResourceModel): Promise<SideloadedDataManager> {
     this.errorIfValueIsUndefined('model', model);
     const originalResourceIndex = this.sideloadedData[model.type].findIndex(resource => model.id === resource.id );
     let changed = false;
@@ -192,26 +225,22 @@ export class SideloadedDataManager {
     if (!changed) {
       return this;
     }
+    // TODO: Fix this shit
     const dm: SideloadedDataManager = await this.db.save(model.type, model.getResource());
     const data = dm.getModelRoot().getResource();
     model.setResource(data);
     this.sideloadedData[model.type][originalResourceIndex] = data;
-    if (!refetch) {
-      return this;
-    }
-    return this.refetch();
+    return this;
   }
 
-  async saveAll(refetch: boolean = false) {
+  private async saveAll() {
     const writes: Promise<any>[] = [];
     for (const type of Object.keys(this.wrappedData)) {
       this.wrappedData[type].map((model: ResourceModel) => writes.push(this.saveModel(model)));
     }
     await Promise.all(writes);
-    if (!refetch) {
-      return this;
-    }
-    return this.refetch();
+    this.init();
+    return this;
   }
 
   private getResourceType(descriptor) {
@@ -249,7 +278,12 @@ export class SideloadedDataManager {
   }
 
   public getCollectionRoot(): ResourceCollection {
-    const models: ResourceModel[] = this.getResourceModelsByTypeAndIds(this.rootResourceDescriptor.type, this.rootResourceDescriptor.ids);
+    let models: ResourceModel[] = [];
+    if (this.rootResourceDescriptor.ids === null) {
+      models = this.getCollectionByType(this.rootResourceDescriptor.type);
+    } else {
+      models = this.getResourceModelsByTypeAndIds(this.rootResourceDescriptor.type, this.rootResourceDescriptor.ids);
+    }
     if (models.length === 0) return null;
     return new ResourceCollection(models, null, this);
   }

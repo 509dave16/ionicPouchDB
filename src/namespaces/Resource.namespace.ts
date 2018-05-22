@@ -52,6 +52,11 @@ export namespace Resource {
     skip?: boolean,
   }
 
+  export interface SaveOptions {
+    refetch?: boolean;
+    related?: boolean;
+  }
+
   export interface RelationalDatabase extends PouchDB.Database {
     setSchema?(schema: any);
     rel?: any;
