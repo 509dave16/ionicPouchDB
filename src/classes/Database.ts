@@ -8,9 +8,11 @@ import SideloadedData = Resource.SideloadedData;
 import RootResourceDescriptor = Resource.RootResourceDescriptor;
 import ParsedDocId = Resource.ParsedDocId;
 import MaxDocIdCache = Resource.MaxDocIdCache;
+import {ResourceModel} from "./ResourceModel";
+import {ResourceCollection} from "./ResourceCollection";
 
 export interface ResourceQuery {
-  (): Promise<SideloadedDataManager>;
+  (): Promise<ResourceModel|ResourceCollection>;
 }
 
 export class Database {
@@ -58,7 +60,7 @@ export class Database {
     this.db.replicate.from(remoteDB, options);
   }
 
-  async save(type: string, object: any): Promise<SideloadedDataManager> {
+  async save(type: string, object: any): Promise<ResourceModel> {
     let writeCompleted = false;
     let promise = null;
     let descriptor: RootResourceDescriptor = null;
@@ -82,37 +84,37 @@ export class Database {
         }
       }
     }
-    return this.wrapWithDataManager(descriptor, promise);
+    return this.wrapWithResourceModel(descriptor, promise);
   }
 
-  findAll(type: string): Promise<SideloadedDataManager> {
+  findAll(type: string): Promise<ResourceCollection> {
     const query: ResourceQuery = () => this.db.rel.find(type);
     const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithDataManager(descriptor, query());
+    return this.wrapWithResourceCollection(descriptor, query());
   }
 
-  findById(type: string, id: number): Promise<SideloadedDataManager> {
+  findById(type: string, id: number): Promise<ResourceModel> {
     const query: ResourceQuery = () => this.db.rel.find(type, id);
     const descriptor: RootResourceDescriptor = { type, ids: [id], plurality: 'model', query};
-    return this.wrapWithDataManager(descriptor, query());
+    return this.wrapWithResourceModel(descriptor, query());
   }
 
-  findByIds(type: string, ids: number[]): Promise<SideloadedDataManager> {
+  findByIds(type: string, ids: number[]): Promise<ResourceCollection> {
     const query = () => this.db.rel.find(type, ids);
     const descriptor: RootResourceDescriptor = { type, ids, plurality: 'collection', query};
-    return this.wrapWithDataManager(descriptor, query());
+    return this.wrapWithResourceCollection(descriptor, query());
   }
 
   // Update this later if we need to include options in the query object
-  findByOptions(type: string, options: FindOptions): Promise<SideloadedDataManager> {
+  findByOptions(type: string, options: FindOptions): Promise<ResourceCollection> {
     const query: ResourceQuery = () => this.db.rel.find(type, options);
     const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithDataManager(descriptor, query());
+    return this.wrapWithResourceCollection(descriptor, query());
   }
-  findHasMany(type: string, belongsToKey: string, belongsToId: number): Promise<SideloadedDataManager> {
+  findHasMany(type: string, belongsToKey: string, belongsToId: number): Promise<ResourceCollection> {
     const query: ResourceQuery = () => this.db.rel.findHasMany(type, belongsToKey, belongsToId);
     const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithDataManager(descriptor, query());
+    return this.wrapWithResourceCollection(descriptor, query());
   }
   delete(type: string, object: any): Promise<any> {
     return this.db.rel.del(type, object);
@@ -126,20 +128,20 @@ export class Database {
     return this.db.rel.getAttachment(type, id, attachmentId)
   }
 
-  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<SideloadedDataManager> {
+  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<ResourceModel> {
     const ids = [object.id];
     const plurality = 'model';
     const query = () => this.db.rel.find(type, object.id);
     const descriptor: RootResourceDescriptor = { type, ids, plurality, query };
-    return this.wrapWithDataManager(descriptor,this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType));
+    return this.wrapWithResourceModel(descriptor,this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType));
   }
 
-  removeAttachment(type: string, object: any, attachmentId: string): Promise<SideloadedDataManager> {
+  removeAttachment(type: string, object: any, attachmentId: string): Promise<ResourceModel> {
     const ids = [object.id];
     const query = () => this.findById(type, object.id);
     const plurality = 'model';
     const descriptor: RootResourceDescriptor = { type, ids, plurality, query };
-    return this.wrapWithDataManager(descriptor, this.db.rel.removeAttachment(type, object, attachmentId));
+    return this.wrapWithResourceModel(descriptor, this.db.rel.removeAttachment(type, object, attachmentId));
   }
 
   parseDocID(docID: string): ParsedDocId {
@@ -150,8 +152,8 @@ export class Database {
     return this.db.rel.makeDocID(parsedDocID);
   }
 
-  parseRelDocs(rootResourceDescriptor, pouchDocs: any): any {
-    return this.wrapWithDataManager(rootResourceDescriptor, this.db.rel.parseRelDocs(rootResourceDescriptor.type, pouchDocs));
+  parseRelDocs(rootResourceDescriptor, pouchDocs: any): Promise<ResourceCollection> {
+    return this.wrapWithResourceCollection(rootResourceDescriptor, this.db.rel.parseRelDocs(rootResourceDescriptor.type, pouchDocs));
   }
 
   setSchema(schema: TypeSchema[]): void {
@@ -163,10 +165,16 @@ export class Database {
     return this.schema;
   }
 
-  private async wrapWithDataManager(rootResoureDescriptor: RootResourceDescriptor, promise: Promise<any>): Promise<SideloadedDataManager>
-  {
+  private async wrapWithResourceModel(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceModel> {
     const data: SideloadedData = await promise;
-    return new SideloadedDataManager(rootResoureDescriptor, data, this);
+    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
+    return dm.getModelRoot();
+  }
+
+  private async wrapWithResourceCollection(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceCollection> {
+    const data: SideloadedData = await promise;
+    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
+    return dm.getCollectionRoot();
   }
 
   private async initializeMaxDocIdCache(): Promise<any> {

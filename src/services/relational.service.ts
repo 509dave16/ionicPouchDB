@@ -3,7 +3,6 @@ import {SuperLoginService} from "./superlogin.service";
 import {Database} from "../classes/Database";
 import TypeSchema = Resource.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
-import {SideloadedDataManager} from "../classes/SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import {ResourceCollection} from "../classes/ResourceCollection";
 
@@ -26,8 +25,7 @@ export class RelationalService {
 
   async seedTestData(): Promise<ResourceModel> {
     try {
-      let dm: SideloadedDataManager = await this.getTestData();
-      const author: ResourceModel = dm.getModelRoot();
+      const author: ResourceModel = await this.getTestData();
       if (author) {
         return author;
       }
@@ -36,35 +34,31 @@ export class RelationalService {
       const grmAuthor = {name: 'George R. R. Martin', id: 1, books: [6, 7]};
       await this.db.save('books', gotBook);
       await this.db.save('books', hkBook);
-      dm = await this.db.save('authors', grmAuthor);
-      return dm.getModelRoot();
+      return this.db.save('authors', grmAuthor);
     } catch (error) {
       console.error(error.message);
     }
   }
 
-  getTestData(): Promise<SideloadedDataManager> {
+  getTestData(): Promise<ResourceModel> {
     return this.db.findById('authors', 1);
   }
 
-  getBooks(): Promise<SideloadedDataManager> {
+  getBooks(): Promise<ResourceCollection> {
     return this.db.findAll('books');
   }
 
-  async addBookToAuthor(data: any, authorId: number): Promise<SideloadedDataManager> {
-    const bookDM: SideloadedDataManager = await this.db.save('books', data);
-    const book: ResourceModel = bookDM.getModelRoot();
-    const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);
-    const author: ResourceModel = authorDM.getModelRoot();
+  async addBookToAuthor(data: any, authorId: number): Promise<ResourceModel> {
+    const book: ResourceModel = await this.db.save('books', data);
+    const author: ResourceModel = await this.db.findById('authors', authorId);
     const books: ResourceCollection = author.get('books') as ResourceCollection;
     books.add(book);
     book.attach('author', author);
     return author.save({ related: true });
   }
 
-  async removeBookFromAuthor(bookId: number, authorId: number) {
-    const authorDM: SideloadedDataManager = await this.db.findById('authors', authorId);
-    const author: ResourceModel = authorDM.getModelRoot();
+  async removeBookFromAuthor(bookId: number, authorId: number): Promise<ResourceModel> {
+    const author: ResourceModel = await this.db.findById('authors', authorId);
     author.detach('books', bookId);
     return author.save({related: true});
   }

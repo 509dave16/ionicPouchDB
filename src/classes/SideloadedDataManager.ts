@@ -190,11 +190,11 @@ export class SideloadedDataManager {
     return ids.map(id => this.getResourceModelByTypeAndId(type, id)).filter(resource => resource !== null);
   }
 
-  public refetch(): Promise<SideloadedDataManager> {
+  public refetch(): Promise<ResourceModel|ResourceCollection> {
     return this.rootResourceDescriptor.query();
   }
 
-  public async save(options: SaveOptions): Promise<SideloadedDataManager> {
+  public async save(options: SaveOptions): Promise<ResourceModel|ResourceCollection> {
     const modelOrCollection: ResourceModel|ResourceCollection = this.getRoot();
     if (options.related) {
       await this.saveAll();
@@ -206,12 +206,12 @@ export class SideloadedDataManager {
     }
 
     if (!options.refetch) {
-      return this;
+      return modelOrCollection;
     }
     return this.refetch();
   }
 
-  private async saveModel(model: ResourceModel): Promise<SideloadedDataManager> {
+  private async saveModel(model: ResourceModel): Promise<ResourceModel> {
     this.errorIfValueIsUndefined('model', model);
     const originalResourceIndex = this.sideloadedData[model.type].findIndex(resource => model.id === resource.id );
     let changed = false;
@@ -223,14 +223,17 @@ export class SideloadedDataManager {
     }
 
     if (!changed) {
-      return this;
+      return model;
     }
-    // TODO: Fix this shit
-    const dm: SideloadedDataManager = await this.db.save(model.type, model.getResource());
-    const data = dm.getModelRoot().getResource();
+    const updatedModel: ResourceModel = await this.db.save(model.type, model.getResource()) as ResourceModel;
+    const data = updatedModel.getResource();
     model.setResource(data);
-    this.sideloadedData[model.type][originalResourceIndex] = data;
-    return this;
+    if ( originalResourceIndex !== -1) {
+      this.sideloadedData[model.type][originalResourceIndex] = data;
+    } else {
+      this.sideloadedData[model.type].push(data);
+    }
+    return model;
   }
 
   private async saveAll() {

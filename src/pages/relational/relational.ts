@@ -3,7 +3,6 @@ import {AlertController, IonicPage, LoadingController, NavController, NavParams}
 import {RelationalService} from "../../services/relational.service";
 import {ResourceModel} from "../../classes/ResourceModel";
 import {ResourceCollection} from "../../classes/ResourceCollection";
-import {SideloadedDataManager} from "../../classes/SideloadedDataManager";
 
 /**
  * Generated class for the RelationalPage page.
@@ -42,9 +41,7 @@ export class RelationalPage {
 
   async initializeData(author: ResourceModel) {
     this.authors = [author];
-    // this.books = author.get('books') as ResourceCollection;
-    const dm: SideloadedDataManager = await this.relationalService.getBooks();
-    this.books = dm.getCollectionRoot();
+    this.books = author.get('books') as ResourceCollection;
   }
 
   ionViewDidLoad() {
@@ -66,8 +63,7 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Creating Book for Author'});
     loading.present();
-    const dm: SideloadedDataManager = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
-    const author: ResourceModel = dm.getModelRoot();
+    const author: ResourceModel = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
     this.initializeData(author);
     this.bookTitle = '';
     this.authorId = '';
@@ -89,8 +85,7 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Removing Book from Author'});
     loading.present();
-    const dm: SideloadedDataManager = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
-    const author: ResourceModel = dm.getModelRoot();
+    const author: ResourceModel = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
     this.initializeData(author);
     this.detachBookId = '';
     this.detachAuthorId = '';
