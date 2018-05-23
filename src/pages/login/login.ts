@@ -21,21 +21,14 @@ export class LoginPage {
 
   }
 
-  login(){
+  async login(){
     let credentials = {
       username: this.username,
       password: this.password
     };
-    this.superLoginService.SuperLoginClient.login(credentials)
-      .then(data => {
-        // this.todoService.init();
-        this.relationalService.init();
-        this.nav.setRoot(RelationalPage);
-      }, (err) => {
-        console.log(err);
-      })
-    ;
-
+    const data = await this.superLoginService.SuperLoginClient.login(credentials);
+    await this.relationalService.init();
+    this.nav.setRoot(RelationalPage);
   }
 
   launchSignup(){

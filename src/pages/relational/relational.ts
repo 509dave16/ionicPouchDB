@@ -37,8 +37,14 @@ export class RelationalPage {
 
   async init() {
     // await this.relationalService.troubleshoot();
-    const author: ResourceModel = await this.relationalService.seedTestData();
-    this.initializeData(author);
+    // const author: ResourceModel = await this.relationalService.seedTestData();
+    // this.initializeData(author);
+    this.relationalService.seedTestData()
+      .then((author: any) => {
+        this.initializeData(author);
+
+      })
+    ;
   }
 
   async initializeData(author: ResourceModel) {

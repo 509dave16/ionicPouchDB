@@ -17,19 +17,24 @@ export interface ResourceQuery {
 
 export class Database {
   private schema: TypeSchema[];
+  private localName: string;
+  private remoteName: string;
   private db: RelationalDatabase;
   private maxDocIdCache: MaxDocIdCache = {};
 
   constructor(schema: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
-    this.init(schema, localName, remoteName);
+    this.schema = schema;
+    this.localName = localName;
+    this.remoteName = remoteName;
+    // this.init(schema, localName, remoteName);
   }
 
-  async init (schema: TypeSchema[], localName: string, remoteName: string) {
-    this.schema = schema;
-    this.db = new PouchDB(localName);
-    this.db.setSchema(schema);
+  // async init (schema: TypeSchema[], localName: string, remoteName: string) {
+  async init () {
+    this.db = new PouchDB(this.localName);
+    this.db.setSchema(this.schema);
     await this.initializeMaxDocIdCache();
-    const remoteDB = new PouchDB(remoteName);
+    const remoteDB = new PouchDB(this.remoteName);
 
     let options = {
       live: true,
@@ -58,6 +63,7 @@ export class Database {
     })
     ;
     this.db.replicate.from(remoteDB, options);
+    return this;
   }
 
   async save(type: string, object: any): Promise<ResourceModel> {
@@ -182,20 +188,17 @@ export class Database {
   }
 
   private async initializeMaxDocIdCache(): Promise<any> {
-    for(const schema of this.schema) {
-      const results = await this.db.allDocs({
-        endkey: schema.singular,
-        startkey: `${schema.singular}\ufff0`,
-        limit: 1,
-        descending: true
-      });
-      if (!results.rows.length) {
-        continue;
-      }
-      const parsedDocId: ParsedDocId = this.parseDocID(results.rows[0].id);
-      this.maxDocIdCache[schema.plural] = parsedDocId.id;
-    }
-    return true;
+    return Promise.all(this.schema.map(async(schema) => this.setMaxDocId(schema)));
+  }
+
+  private async setMaxDocId(schema: TypeSchema) {
+    const results = await this.db.allDocs({
+      endkey: schema.singular,
+      startkey: `${schema.singular}\ufff0`,
+      limit: 1,
+      descending: true
+    });
+    return this.maxDocIdCache[schema.plural] = !results.rows.length ? 0 : this.parseDocID(results.rows[0].id).id;
   }
 
   public getNextMaxDocId(type: string): number {

@@ -14,34 +14,42 @@ export class RelationalService {
   constructor(public superLoginService: SuperLoginService) {
   }
 
-  init() {
+  async init() {
     const remote = this.superLoginService.SuperLoginClient.getDbUrl('relational');
     const schema: TypeSchema[] = [
       {singular: 'author', plural: 'authors', relations: {books: {hasMany: 'books'}}},
       {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'authors'}}}
     ];
     this.db = new Database(schema, 'relationalDB', remote);
+    await this.db.init();
+    return this;
   }
 
   async seedTestData(): Promise<ResourceModel> {
     // try {
-      const author: ResourceModel = await this.getTestData();
+      let author: ResourceModel = await this.getTestData();
       if (author) {
         return author;
       }
-      const gotBook = {title: 'A Game of Thrones', id: 6, author: 1};
-      const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
-      const grmAuthor = {name: 'George R. R. Martin', id: 1, books: [6, 7]};
-      await this.db.save('books', gotBook);
-      await this.db.save('books', hkBook);
-      return this.db.save('authors', grmAuthor);
+      // const gotBook = {title: 'A Game of Thrones', id: 6, author: 1};
+      // const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
+      // const grmAuthor = {name: 'George R. R. Martin', id: 1, books: [6, 7]};
+      const gotBook = {title: 'A Game of Thrones'};
+      const hkBook = {title: 'The Hedge Knight'};
+      const grmAuthor = {name: 'George R. R. Martin'};
+      // await this.db.save('books', gotBook);
+      // await this.db.save('books', hkBook);
+      author = await this.db.save('authors', grmAuthor);
+      author.attach('books', gotBook);
+      author.attach('books', hkBook);
     // } catch (error) {
     //   console.error(error.message);
     // }
   }
 
   getTestData(): Promise<ResourceModel> {
-    return this.db.findById('authors', 1);
+    return Promise.resolve(null);
+    // return this.db.findById('authors', 1);
   }
 
   getBooks(): Promise<ResourceCollection> {
