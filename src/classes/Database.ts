@@ -156,6 +156,10 @@ export class Database {
     return this.wrapWithResourceCollection(rootResourceDescriptor, this.db.rel.parseRelDocs(rootResourceDescriptor.type, pouchDocs));
   }
 
+  bulkDocs(docs: any[]): Promise<any> {
+    return this.db.bulkDocs(docs);
+  }
+
   setSchema(schema: TypeSchema[]): void {
     this.schema = schema;
     this.db.setSchema(schema);
@@ -194,7 +198,7 @@ export class Database {
     return true;
   }
 
-  private getNextMaxDocId(type: string): number {
+  public getNextMaxDocId(type: string): number {
     if (this.maxDocIdCache[type] === undefined) {
       throw new Error(`type ${type} does not exist as key in cache.`);
     }

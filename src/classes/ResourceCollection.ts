@@ -14,15 +14,15 @@ export class ResourceCollection {
     this.dataManager = dataManager;
   }
 
-  add(model: ResourceModel): ResourceCollection {
+  add(modelOrResource: ResourceModel|any, inverseRelation?:string ): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(parent, relationName, model);
+    this.dataManager.attachToRelation(parent, relationName, modelOrResource, inverseRelation);
     return this;
   }
 
-  remove(modelOrId: ResourceModel|number): ResourceCollection {
+  remove(modelOrId: ResourceModel|number, inverseRelation?: string): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
-    this.dataManager.detachFromRelation(parent, relationName, modelOrId);
+    this.dataManager.detachFromRelation(parent, relationName, modelOrId, inverseRelation);
     return this;
   }
 
@@ -40,7 +40,7 @@ export class ResourceCollection {
     return null;
   }
 
-  async save(options: SaveOptions = { refetch: false, related: false}): Promise<any> {
+  async save(options: SaveOptions = { refetch: false, related: false, bulk: false}): Promise<any> {
     return this.dataManager.save(options);
   }
 
