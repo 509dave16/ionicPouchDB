@@ -87,14 +87,20 @@ export class RelationData {
     return this.relationCache[type][id][relation];
   }
 
-  public attachToRelation(parentModel: ResourceModel, relationName: string, model: ResourceModel) {
+  public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any) {
     this.errorIfValueIsUndefined('parent model', parentModel);
-    this.errorIfValueIsUndefined('child model', model);
-    this.errorIfValueIsUndefined('child model id', model.id);
-
     const schema = this.dm.getTypeSchema(parentModel.type);
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
+
+    let model: ResourceModel;
+    if (modelOrResource !== undefined && (modelOrResource as ResourceModel).type !== undefined) {
+      model = modelOrResource as ResourceModel;
+    } else if(modelOrResource !== undefined) {
+      const resource: any = modelOrResource;
+      resource.id = this.dm.db.getNextMaxDocId(descriptor.relationResourceType);
+      model = new ResourceModel(resource, descriptor.relationResourceType, this.dm)
+    }
     // 1. Add model to wrapped data cache if it doesn't exist
     const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.id);
     if (!resourceModel) { this.dm.sideloadedModelData.getCollectionByType(model.type).push(model); }
@@ -117,7 +123,7 @@ export class RelationData {
     let modelId: number;
     if (modelOrId !== undefined && (modelOrId as ResourceModel).id !== undefined) {
       const model = modelOrId as ResourceModel;
-      this.errorIfValueIsUndefined('child model', model.id);
+      this.errorIfValueIsUndefined('child model id', model.id);
       modelId = model.id;
     } else if(modelOrId !== undefined) {
       modelId = modelOrId as number;

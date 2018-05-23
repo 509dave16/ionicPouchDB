@@ -198,7 +198,7 @@ export class Database {
     return true;
   }
 
-  private getNextMaxDocId(type: string): number {
+  public getNextMaxDocId(type: string): number {
     if (this.maxDocIdCache[type] === undefined) {
       throw new Error(`type ${type} does not exist as key in cache.`);
     }

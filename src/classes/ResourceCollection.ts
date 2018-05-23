@@ -14,9 +14,9 @@ export class ResourceCollection {
     this.dataManager = dataManager;
   }
 
-  add(model: ResourceModel): ResourceCollection {
+  add(modelOrResource: ResourceModel|any): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(parent, relationName, model);
+    this.dataManager.attachToRelation(parent, relationName, modelOrResource);
     return this;
   }
 

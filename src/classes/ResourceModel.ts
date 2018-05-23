@@ -13,8 +13,7 @@ export class ResourceModel {
   private typeSchema: TypeSchema;
 
   private relationDesc: RelationDescriptor;
-  constructor(resource: any, type: string, dataManager: SideloadedDataManager)
-  {
+  constructor(resource: any, type: string, dataManager: SideloadedDataManager) {
     this.type = type;
     this.dataManager = dataManager;
     this.typeSchema = this.dataManager.getTypeSchema(this.type);
@@ -50,8 +49,8 @@ export class ResourceModel {
     return this.dataManager.getRelation(this.type, this.resource.id, relation);
   }
 
-  attach(relation: string, model: ResourceModel): ResourceModel {
-    this.dataManager.attachToRelation(this, relation, model);
+  attach(relation: string, modelOrResource: ResourceModel|any): ResourceModel {
+    this.dataManager.attachToRelation(this, relation, modelOrResource);
     return this;
   }
 
