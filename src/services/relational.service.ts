@@ -49,11 +49,8 @@ export class RelationalService {
   }
 
   async addBookToAuthor(data: any, authorId: number): Promise<ResourceModel> {
-    const book: ResourceModel = await this.db.save('books', data);
     const author: ResourceModel = await this.db.findById('authors', authorId);
-    const books: ResourceCollection = author.get('books') as ResourceCollection;
-    books.add(book);
-    book.attach('author', author);
+    author.attach('books', data);
     return author.save({ related: true, bulk: true });
   }
 

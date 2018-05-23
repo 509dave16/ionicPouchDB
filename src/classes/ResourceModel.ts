@@ -49,13 +49,13 @@ export class ResourceModel {
     return this.dataManager.getRelation(this.type, this.resource.id, relation);
   }
 
-  attach(relation: string, modelOrResource: ResourceModel|any): ResourceModel {
-    this.dataManager.attachToRelation(this, relation, modelOrResource);
+  attach(relation: string, modelOrResource: ResourceModel|any, inverseRelation?: string): ResourceModel {
+    this.dataManager.attachToRelation(this, relation, modelOrResource, inverseRelation);
     return this;
   }
 
-  detach(relation: string, modelOrId: ResourceModel|number): ResourceModel {
-    this.dataManager.detachFromRelation(this, relation, modelOrId);
+  detach(relation: string, modelOrId: ResourceModel|number, inverseRelation?: string): ResourceModel {
+    this.dataManager.detachFromRelation(this, relation, modelOrId, inverseRelation);
     return this;
   }
 

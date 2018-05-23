@@ -38,12 +38,12 @@ export class SideloadedDataManager {
     return this.relationData.getRelation(type, id, relation);
   }
 
-  public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any) {
-    return this.relationData.attachToRelation(parentModel, relationName, modelOrResource);
+  public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any, inverseRelation: string) {
+    return this.relationData.attachToRelation(parentModel, relationName, modelOrResource,inverseRelation);
   }
 
-  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number) {
-    return this.relationData.detachFromRelation(parentModel, relationName, modelOrId);
+  public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number, inverseRelation: string) {
+    return this.relationData.detachFromRelation(parentModel, relationName, modelOrId, inverseRelation);
   }
 
   public getTypeSchema(type: string): TypeSchema {
