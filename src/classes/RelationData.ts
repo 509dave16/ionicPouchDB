@@ -33,7 +33,7 @@ export class RelationData {
 
   private cacheRelations() {
     this.relationCache = {};
-    const data: any = this.dm.sideloadeModelData.getData();
+    const data: any = this.dm.sideloadedModelData.getData();
     for (const type of  Object.keys(data)) {
       const models: ResourceModel[] = data[type];
       models.map((model: ResourceModel) => this.cacheModelRelations(model));
@@ -48,12 +48,12 @@ export class RelationData {
       const descriptor: RelationDescriptor = this.getRelationDescriptor(model, relationName, relation);
       let value: ResourceCollection|ResourceModel = null;
       if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
-        const resourceModel: ResourceModel = this.dm.sideloadeModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
+        const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
         if (!resourceModel) return;
         resourceModel.setRelationDescriptor(descriptor);
         value = resourceModel;
       } else if (descriptor.relationType === RelationData.RELATION_TYPE_HAS_MANY) {
-        const models: ResourceModel[] = this.dm.sideloadeModelData.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
+        const models: ResourceModel[] = this.dm.sideloadedModelData.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
         const resourceCollection: ResourceCollection = new ResourceCollection(models, descriptor, this.dm);
         value = resourceCollection;
       }
@@ -96,8 +96,8 @@ export class RelationData {
     const relation = schema.relations[relationName];
     const descriptor = this.getRelationDescriptor(parentModel, relationName, relation);
     // 1. Add model to wrapped data cache if it doesn't exist
-    const resourceModel: ResourceModel = this.dm.sideloadeModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.id);
-    if (!resourceModel) { this.dm.sideloadeModelData.getCollectionByType(model.type).push(model); }
+    const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.id);
+    if (!resourceModel) { this.dm.sideloadedModelData.getCollectionByType(model.type).push(model); }
     // 2. Add model to parent
     if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, model.id);

@@ -1,4 +1,4 @@
-import {objectClone} from "../utils/object.util";
+import {objectClone, objectEqual} from "../utils/object.util";
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {Resource} from "../namespaces/Resource.namespace";
 import RelationDescriptor = Resource.RelationDescriptor;
@@ -7,6 +7,7 @@ import SaveOptions = Resource.SaveOptions;
 
 export class ResourceModel {
   private resource: any;
+  private originalResource: any;
   public type: string;
   private dataManager: SideloadedDataManager;
   private typeSchema: TypeSchema;
@@ -17,6 +18,7 @@ export class ResourceModel {
     this.type = type;
     this.dataManager = dataManager;
     this.typeSchema = this.dataManager.getTypeSchema(this.type);
+    this.originalResource = resource;
     this.resource = objectClone(resource);
   }
 
@@ -24,16 +26,24 @@ export class ResourceModel {
     this.relationDesc = relationDesc;
   }
 
-  get id() {
+  get id(): number {
     return this.resource.id;
   }
 
-  getResource() {
+  getResource(): any {
     return this.resource;
   }
 
   setResource(resource: any) {
     this.resource = resource;
+  }
+
+  refreshOriginalResource() {
+    this.originalResource = objectClone(this.resource);
+  }
+
+  hasChanged(): boolean {
+    return objectEqual(this.resource, this.originalResource);
   }
 
   get(relation: string) {
@@ -58,7 +68,7 @@ export class ResourceModel {
     this.resource[field] = value;
   }
 
-  save(options: SaveOptions = { refetch: false, related: false }): Promise<any> {
+  save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {
     return this.dataManager.save(options);
   }
 }

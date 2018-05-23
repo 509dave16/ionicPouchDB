@@ -3,7 +3,11 @@ import {ResourceModel} from "../classes/ResourceModel";
 
 export namespace Resource {
   export interface SideloadedData {
-    [resourceName: string]: ResourceModel[];
+    [type: string]: any[];
+  }
+
+  export interface ISideloadedModelData {
+    [type: string]: ResourceModel[];
   }
 
   export interface RootResourceDescriptor {
@@ -55,6 +59,7 @@ export namespace Resource {
   export interface SaveOptions {
     refetch?: boolean;
     related?: boolean;
+    bulk?: boolean;
   }
 
   export interface RelationalDatabase extends PouchDB.Database {

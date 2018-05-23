@@ -156,6 +156,10 @@ export class Database {
     return this.wrapWithResourceCollection(rootResourceDescriptor, this.db.rel.parseRelDocs(rootResourceDescriptor.type, pouchDocs));
   }
 
+  bulkDocs(docs: any[]): Promise<any> {
+    return this.db.bulkDocs(docs);
+  }
+
   setSchema(schema: TypeSchema[]): void {
     this.schema = schema;
     this.db.setSchema(schema);

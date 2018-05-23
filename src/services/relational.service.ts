@@ -24,7 +24,7 @@ export class RelationalService {
   }
 
   async seedTestData(): Promise<ResourceModel> {
-    try {
+    // try {
       const author: ResourceModel = await this.getTestData();
       if (author) {
         return author;
@@ -35,9 +35,9 @@ export class RelationalService {
       await this.db.save('books', gotBook);
       await this.db.save('books', hkBook);
       return this.db.save('authors', grmAuthor);
-    } catch (error) {
-      console.error(error.message);
-    }
+    // } catch (error) {
+    //   console.error(error.message);
+    // }
   }
 
   getTestData(): Promise<ResourceModel> {
@@ -54,17 +54,20 @@ export class RelationalService {
     const books: ResourceCollection = author.get('books') as ResourceCollection;
     books.add(book);
     book.attach('author', author);
-    return author.save({ related: true });
+    return author.save({ related: true, bulk: true });
   }
 
   async removeBookFromAuthor(bookId: number, authorId: number): Promise<ResourceModel> {
     const author: ResourceModel = await this.db.findById('authors', authorId);
     author.detach('books', bookId);
-    return author.save({related: true});
+    return author.save({related: true, bulk: true});
   }
 
   async troubleshoot() {
     const parsedId: any = this.db.parseDocID('book_1_0000000000000012');
+    const response = await this.db.bulkDocs([{
+     'test': 'if bulk docs works'
+    }]);
     console.log(`Book ID Parsed: ${parsedId.id}`);
   }
 }

@@ -40,7 +40,7 @@ export class ResourceCollection {
     return null;
   }
 
-  async save(options: SaveOptions = { refetch: false, related: false}): Promise<any> {
+  async save(options: SaveOptions = { refetch: false, related: false, bulk: false}): Promise<any> {
     return this.dataManager.save(options);
   }
 
