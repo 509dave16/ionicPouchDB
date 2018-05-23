@@ -43,7 +43,7 @@ export class ResourceModel {
   }
 
   hasChanged(): boolean {
-    return objectEqual(this.resource, this.originalResource);
+    return !objectEqual(this.resource, this.originalResource);
   }
 
   get(relation: string) {
