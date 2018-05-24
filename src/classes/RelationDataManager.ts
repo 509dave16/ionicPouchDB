@@ -1,8 +1,8 @@
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {ResourceModel} from "./ResourceModel";
 import {ResourceCollection} from "./ResourceCollection";
-import {SideORM} from "../namespaces/Resource.namespace";
-import RelationDescriptor = SideORM.RelationDescriptor;
+import {RanksORM} from "../namespaces/RanksORM.namespace";
+import RelationDescriptor = RanksORM.RelationDescriptor;
 
 export class RelationDataManager {
   private static readonly RELATION_TYPE_HAS_MANY = 'hasMany';

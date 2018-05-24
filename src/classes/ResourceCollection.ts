@@ -1,8 +1,8 @@
 import {ResourceModel} from "./ResourceModel";
 import {SideloadedDataManager} from "./SideloadedDataManager";
-import {SideORM} from "../namespaces/Resource.namespace";
-import RelationDescriptor = SideORM.RelationDescriptor;
-import SaveOptions = SideORM.SaveOptions;
+import {RanksORM} from "../namespaces/RanksORM.namespace";
+import RelationDescriptor = RanksORM.RelationDescriptor;
+import SaveOptions = RanksORM.SaveOptions;
 
 export class ResourceCollection {
   private dataManager: SideloadedDataManager;

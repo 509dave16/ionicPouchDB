@@ -2,7 +2,7 @@ import {ResourceQuery} from "../classes/Database";
 import {ResourceModel} from "../classes/ResourceModel";
 import t from 'tcomb';
 
-export namespace SideORM {
+export namespace RanksORM {
   export interface SideloadedData {
     [type: string]: any[];
   }

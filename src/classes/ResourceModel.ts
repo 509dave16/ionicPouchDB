@@ -1,9 +1,9 @@
 import {objectClone, objectEqual} from "../utils/object.util";
 import {SideloadedDataManager} from "./SideloadedDataManager";
-import {SideORM} from "../namespaces/Resource.namespace";
-import RelationDescriptor = SideORM.RelationDescriptor;
-import TypeSchema = SideORM.TypeSchema;
-import SaveOptions = SideORM.SaveOptions;
+import {RanksORM} from "../namespaces/RanksORM.namespace";
+import RelationDescriptor = RanksORM.RelationDescriptor;
+import TypeSchema = RanksORM.TypeSchema;
+import SaveOptions = RanksORM.SaveOptions;
 import t from 'tcomb';
 
 export class ResourceModel {

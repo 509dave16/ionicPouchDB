@@ -1,12 +1,12 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
 import {Database} from "../classes/Database";
-import TypeSchema = SideORM.TypeSchema;
+import TypeSchema = RanksORM.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
-import {SideORM} from "../namespaces/Resource.namespace";
+import {RanksORM} from "../namespaces/RanksORM.namespace";
 import {ResourceCollection} from "../classes/ResourceCollection";
 import t from 'tcomb';
-import Properties = SideORM.Properties;
+import Properties = RanksORM.Properties;
 
 @Injectable()
 export class RelationalService {
