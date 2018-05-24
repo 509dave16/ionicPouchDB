@@ -40,7 +40,6 @@ export class RelationalService {
   }
 
   async seedTestData(): Promise<ResourceModel> {
-    // try {
       let author: ResourceModel = await this.getTestData();
       if (author) {
         return author;
@@ -49,13 +48,11 @@ export class RelationalService {
       const hkBook = {title: 'The Hedge Knight'};
       const grmAuthor = {name: 'George R. R. Martin'};
       author = await this.db.save('authors', grmAuthor);
-      author.attach('books', gotBook);
-      author.attach('books', hkBook);
-      await author.save({ related: true, bulk: true});
+      await author.attach('books', gotBook)
+        .attach('books', hkBook)
+        .save({ related: true, bulk: true})
+      ;
       return author;
-    // } catch (error) {
-    //   console.error(error.message);
-    // }
   }
 
   getTestData(): Promise<ResourceModel> {
