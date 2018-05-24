@@ -9,9 +9,6 @@ import {objectClone} from "../utils/object.util";
 import SaveOptions = RanksORM.SaveOptions;
 import {SideloadedModelData} from "./SideloadedModelData";
 import {RelationDataManager} from "./RelationDataManager";
-import ParsedDocId = RanksORM.ParsedDocId;
-import _ from 'lodash';
-import ISideloadedModelData = RanksORM.ISideloadedModelData;
 import {PersistenceManager} from "./PersistenceManager";
 
 export class SideloadedDataManager {
@@ -67,84 +64,6 @@ export class SideloadedDataManager {
     }
     return this.refetch();
   }
-
-    // public async save(options: SaveOptions): Promise<ResourceModel|ResourceCollection> {
-  //   const modelOrCollection: ResourceModel|ResourceCollection = this.getRoot();
-  //   if (options.related) {
-  //     await options.bulk ? this.saveAllBulk() : this.saveAllIndividually();
-  //   } else if (modelOrCollection instanceof  ResourceModel) {
-  //     await this.saveModel(modelOrCollection);
-  //   } else {
-  //     const writes: Promise<any>[] = modelOrCollection.map((model: ResourceModel) => this.saveModel(model));
-  //     await Promise.all(writes);
-  //   }
-  //
-  //   if (!options.refetch) {
-  //     return modelOrCollection;
-  //   }
-  //   return this.refetch();
-  // }
-  //
-  // private async saveModel(model: ResourceModel): Promise<ResourceModel> {
-  //   if (!model.hasChanged()) {
-  //     return model;
-  //   }
-  //   const updatedModel: ResourceModel = await this.db.save(model.type, model.getResource()) as ResourceModel;
-  //   const data = updatedModel.getResource();
-  //   model.setResource(data);
-  //   model.refreshOriginalResource();
-  //   return model;
-  // }
-  //
-  // private updateResourceModelMetadata(docMetadata: any) {
-  //   const parsedDocID: ParsedDocId = this.db.parseDocID(docMetadata.id);
-  //   const typeSchema: TypeSchema = this.getTypeSchema(parsedDocID.type);
-  //   const model: ResourceModel = this.sideloadedModelData.getResourceModelByTypeAndId(typeSchema.plural, parsedDocID.id);
-  //   model.setField('id', parsedDocID.id);
-  //   model.setField('rev', docMetadata.rev);
-  //   model.refreshOriginalResource();
-  // }
-  //
-  // private makeBulkDocsResource(model: ResourceModel): any {
-  //   // 1. Don't change models data
-  //   const resourceClone: any = objectClone(model.getResource());
-  //   // 2. Make a relational pouch id
-  //   const { type, id } = model;
-  //   const parsedDocID: ParsedDocId = { type, id};
-  //   const rpId: string = this.db.makeDocID(parsedDocID);
-  //   // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _id/_rev
-  //   resourceClone._id = rpId;
-  //   resourceClone._rev = resourceClone.rev;
-  //   delete resourceClone.id;
-  //   delete resourceClone.rev;
-  //   // 4. Make an object with _id, _rev, and data(which is everything but _id/_rev
-  //   const blacklistedKeys = ['_id', '_rev'];
-  //   const data = _.omit(resourceClone, blacklistedKeys);
-  //   const obj = _.pick(resourceClone, blacklistedKeys);
-  //   obj.data = data;
-  //   return obj;
-  // }
-  //
-  // private async saveAllBulk() {
-  //   const models: ResourceModel[] = this.sideloadedModelData.getFlattenedData() as ResourceModel[];
-  //   const changedModels: ResourceModel[] = models.filter((model: ResourceModel) => model.hasChanged());
-  //   const changedResources: any[] = changedModels.map((model: ResourceModel) => this.makeBulkDocsResource(model));
-  //   const docsMetadata: any[] = await this.db.bulkDocs(changedResources);
-  //   docsMetadata.forEach((docMetadata: any) => this.updateResourceModelMetadata(docMetadata));
-  //   this.init();
-  //   return this;
-  // }
-  //
-  // private async saveAllIndividually() {
-  //   const writes: Promise<any>[] = [];
-  //   const data: ISideloadedModelData = this.sideloadedModelData.getData();
-  //   for (const type of Object.keys(data)) {
-  //     data[type].map((model: ResourceModel) => writes.push(this.saveModel(model)));
-  //   }
-  //   await Promise.all(writes);
-  //   this.init();
-  //   return this;
-  // }
 
   public getRoot(): ResourceCollection | ResourceModel {
     if (this.rootResourceDescriptor.plurality === SideloadedDataManager.PLURALITY_MANY) {
