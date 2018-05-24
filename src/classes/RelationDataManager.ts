@@ -5,8 +5,8 @@ import {RanksORM} from "../namespaces/RanksORM.namespace";
 import RelationDescriptor = RanksORM.RelationDescriptor;
 
 export class RelationDataManager {
-  private static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
-  private static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
+  public static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
+  public static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
   private readonly dm: SideloadedDataManager;
   protected relationCache: any = {};
 
@@ -195,7 +195,7 @@ export class RelationDataManager {
     }
   }
 
-  private getRelationDescriptor(model: ResourceModel, relationName): RelationDescriptor {
+  public getRelationDescriptor(model: ResourceModel, relationName): RelationDescriptor {
     const schema = this.dm.getTypeSchema(model.type);
     const relation = schema.relations[relationName];
     if (relation == undefined) {

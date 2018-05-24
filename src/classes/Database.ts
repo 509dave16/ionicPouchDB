@@ -188,7 +188,7 @@ export class Database {
     return dm.getCollectionRoot();
   }
 
-  private initializeMaxDocIdCache(): Promise<any> {
+  public initializeMaxDocIdCache(): Promise<any> {
     return Promise.all(this.schema.map((schema) => this.setMaxDocId(schema)));
   }
 

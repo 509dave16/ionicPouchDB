@@ -64,6 +64,12 @@ export class RelationalService {
     return this.db.findAll('books');
   }
 
+  async createAuthor(authorId) {
+    const grmAuthor = {name: 'George R. R. Martin'};
+    const author: ResourceModel = await this.db.save('authors', grmAuthor);
+    return author;
+  }
+
   async addBookToAuthor(data: any, authorId: number): Promise<ResourceModel> {
     const author: ResourceModel = await this.db.findById('authors', authorId);
     author.attach('books', data);
@@ -78,9 +84,11 @@ export class RelationalService {
 
   async troubleshoot() {
     const parsedId: any = this.db.parseDocID('book_1_0000000000000012');
-    const response = await this.db.bulkDocs([{
-     'test': 'if bulk docs works'
-    }]);
     console.log(`Book ID Parsed: ${parsedId.id}`);
+    const response = await this.db.bulkDocs([{
+      _id: 'book_1_0000000000000012',
+      data: { name: 'its me'},
+    }]);
+    console.log(response);
   }
 }

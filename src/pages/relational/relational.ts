@@ -23,6 +23,7 @@ export class RelationalPage {
   authorId: string;
   detachAuthorId: string;
   detachBookId: string;
+  newAuthorId: string;
   constructor(
     public relationalService: RelationalService,
     public navCtrl: NavController,
@@ -89,6 +90,25 @@ export class RelationalPage {
     this.initializeData(author);
     this.detachBookId = '';
     this.detachAuthorId = '';
+    loading.dismiss();
+  }
+
+  async addAuthor() {
+    let errorMessage = '';
+    if (!this.newAuthorId) { errorMessage += 'Must enter a number for Author Id\n'; }
+    if (errorMessage) {
+      let alert = this.alertCtrl.create({
+        title: 'Validation Errors',
+        subTitle: errorMessage,
+        buttons: ['Dismiss']
+      });
+      alert.present();
+      return;
+    }
+    const loading = this.loadCtrl.create({ content: 'Adding Author'});
+    loading.present();
+    const author: ResourceModel = await this.relationalService.createAuthor(this.newAuthorId);
+    this.newAuthorId = '';
     loading.dismiss();
   }
 }

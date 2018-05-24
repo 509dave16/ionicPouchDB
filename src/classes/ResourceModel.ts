@@ -144,6 +144,10 @@ export class ResourceModel {
     return errors;
   }
 
+  isNewResource(): boolean {
+    return this.resource['rev'] == undefined;
+  }
+
   save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {
     return this.dataManager.save(options);
   }
