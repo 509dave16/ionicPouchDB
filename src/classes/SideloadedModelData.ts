@@ -1,8 +1,8 @@
-import {Resource} from "../namespaces/Resource.namespace";
-import SideloadedData = Resource.SideloadedData;
+import {SideORM} from "../namespaces/Resource.namespace";
+import SideloadedData = SideORM.SideloadedData;
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {ResourceModel} from "./ResourceModel";
-import ISideloadedModelData = Resource.ISideloadedModelData;
+import ISideloadedModelData = SideORM.ISideloadedModelData;
 import {objectEqual} from "../utils/object.util";
 
 export class SideloadedModelData {

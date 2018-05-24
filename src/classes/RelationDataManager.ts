@@ -1,10 +1,10 @@
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {ResourceModel} from "./ResourceModel";
 import {ResourceCollection} from "./ResourceCollection";
-import {Resource} from "../namespaces/Resource.namespace";
-import RelationDescriptor = Resource.RelationDescriptor;
+import {SideORM} from "../namespaces/Resource.namespace";
+import RelationDescriptor = SideORM.RelationDescriptor;
 
-export class RelationData {
+export class RelationDataManager {
   private static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
   private static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
   private readonly dm: SideloadedDataManager;
@@ -46,12 +46,12 @@ export class RelationData {
     for (const relationName of Object.keys(schema.relations)) {
       const descriptor: RelationDescriptor = this.getRelationDescriptor(model, relationName);
       let value: ResourceCollection|ResourceModel = null;
-      if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
+      if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
         const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
         if (!resourceModel) return;
         resourceModel.setRelationDescriptor(descriptor);
         value = resourceModel;
-      } else if (descriptor.relationType === RelationData.RELATION_TYPE_HAS_MANY) {
+      } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
         const models: ResourceModel[] = this.dm.sideloadedModelData.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
         const resourceCollection: ResourceCollection = new ResourceCollection(models, descriptor, this.dm);
         value = resourceCollection;
@@ -135,15 +135,15 @@ export class RelationData {
   public addToRelation(descriptor: RelationDescriptor, childModel: ResourceModel) {
     const parentModel: ResourceModel = descriptor.parent;
     const relationName: string = descriptor.relationName;
-    if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
+    if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, childModel.id);
       this.setRelation(parentModel, relationName, childModel);
-    } else if (descriptor.relationType === RelationData.RELATION_TYPE_HAS_MANY) {
+    } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
       const modelExists = collection.find((resourceModel: ResourceModel) => resourceModel.id === childModel.id );
       if (!modelExists) {
         collection._push(childModel);
-        parentModel.getField(relationName).push(childModel.id);
+        parentModel.addToField(relationName, childModel.id);
       }
     }
   }
@@ -170,10 +170,10 @@ export class RelationData {
   public removeFromRelation(descriptor: RelationDescriptor, childModel: ResourceModel) {
     const parentModel: ResourceModel = descriptor.parent;
     const relationName: string = descriptor.relationName;
-    if (descriptor.relationType === RelationData.RELATION_TYPE_BELONGS_TO) {
+    if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, null);
       this.unsetRelation(parentModel, relationName);
-    } else if (descriptor.relationType === RelationData.RELATION_TYPE_HAS_MANY) {
+    } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
       const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
       const modelIndex= collection.findIndex((resourceModel: ResourceModel) => resourceModel.id === childModel.id );
       if (modelIndex !== -1) { collection._splice(modelIndex, 1); }
@@ -188,10 +188,10 @@ export class RelationData {
 
   private getRelationType(descriptor) {
     if (descriptor.hasMany) {
-      return RelationData.RELATION_TYPE_HAS_MANY;
+      return RelationDataManager.RELATION_TYPE_HAS_MANY;
     }
     if (descriptor.belongsTo) {
-      return RelationData.RELATION_TYPE_BELONGS_TO;
+      return RelationDataManager.RELATION_TYPE_BELONGS_TO;
     }
   }
 

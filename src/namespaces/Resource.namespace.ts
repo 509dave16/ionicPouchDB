@@ -1,7 +1,8 @@
 import {ResourceQuery} from "../classes/Database";
 import {ResourceModel} from "../classes/ResourceModel";
+import t from 'tcomb';
 
-export namespace Resource {
+export namespace SideORM {
   export interface SideloadedData {
     [type: string]: any[];
   }
@@ -29,14 +30,16 @@ export namespace Resource {
     [relationName: string] : { hasMany?: string, belongsTo?: string }
   }
 
+  export interface Properties {
+    [propName: string] : { type: t.Type<any>, elementType?: t.Type<any>, default: any };
+  }
+
   export interface TypeSchema {
     singular: string;
     plural: string;
-    relations?: {
-      [relationKey: string] : {
-        hasMany?: string;
-        belongsTo?: string;
-      };
+    relations?: Relations;
+    props: {
+
     }
   }
 

@@ -1,13 +1,13 @@
 import PouchDB from 'pouchdb';
-import TypeSchema = Resource.TypeSchema;
-import RelationalDatabase = Resource.RelationalDatabase;
-import FindOptions = Resource.FindOptions;
+import TypeSchema = SideORM.TypeSchema;
+import RelationalDatabase = SideORM.RelationalDatabase;
+import FindOptions = SideORM.FindOptions;
 import {SideloadedDataManager} from "./SideloadedDataManager";
-import {Resource} from "../namespaces/Resource.namespace";
-import SideloadedData = Resource.SideloadedData;
-import RootResourceDescriptor = Resource.RootResourceDescriptor;
-import ParsedDocId = Resource.ParsedDocId;
-import MaxDocIdCache = Resource.MaxDocIdCache;
+import {SideORM} from "../namespaces/Resource.namespace";
+import SideloadedData = SideORM.SideloadedData;
+import RootResourceDescriptor = SideORM.RootResourceDescriptor;
+import ParsedDocId = SideORM.ParsedDocId;
+import MaxDocIdCache = SideORM.MaxDocIdCache;
 import {ResourceModel} from "./ResourceModel";
 import {ResourceCollection} from "./ResourceCollection";
 
@@ -17,19 +17,26 @@ export interface ResourceQuery {
 
 export class Database {
   private schema: TypeSchema[];
+  private localName: string;
+  private remoteName: string;
   private db: RelationalDatabase;
   private maxDocIdCache: MaxDocIdCache = {};
 
   constructor(schema: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
-    this.init(schema, localName, remoteName);
+    this.schema = schema;
+    this.localName = localName;
+    this.remoteName = remoteName;
   }
 
-  async init (schema: TypeSchema[], localName: string, remoteName: string) {
-    this.schema = schema;
-    this.db = new PouchDB(localName);
-    this.db.setSchema(schema);
-    await this.initializeMaxDocIdCache();
-    const remoteDB = new PouchDB(remoteName);
+  init (): Promise<any> {
+    this.setupReplication();
+    return this.initializeMaxDocIdCache();
+  }
+
+  setupReplication() {
+    this.db = new PouchDB(this.localName);
+    this.db.setSchema(this.schema);
+    const remoteDB: PouchDB.Database = new PouchDB(this.remoteName);
 
     let options = {
       live: true,
@@ -171,30 +178,28 @@ export class Database {
 
   private async wrapWithResourceModel(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceModel> {
     const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = await new SideloadedDataManager(descriptor, data, this);
+    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
     return dm.getModelRoot();
   }
 
   private async wrapWithResourceCollection(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceCollection> {
     const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = await new SideloadedDataManager(descriptor, data, this);
+    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
     return dm.getCollectionRoot();
   }
 
-  private async initializeMaxDocIdCache(): Promise<any> {
-    for(const schema of this.schema) {
-      const results = await this.db.allDocs({
-        endkey: schema.singular,
-        startkey: `${schema.singular}\ufff0`,
-        limit: 1,
-        descending: true
-      });
-      if (!results.rows.length) {
-        continue;
-      }
-      const parsedDocId: ParsedDocId = this.parseDocID(results.rows[0].id);
-      this.maxDocIdCache[schema.plural] = parsedDocId.id;
-    }
+  private initializeMaxDocIdCache(): Promise<any> {
+    return Promise.all(this.schema.map((schema) => this.setMaxDocId(schema)));
+  }
+
+  private async setMaxDocId(schema: TypeSchema): Promise<any> {
+    const results = await this.db.allDocs({
+      endkey: schema.singular,
+      startkey: `${schema.singular}\ufff0`,
+      limit: 1,
+      descending: true
+    });
+    this.maxDocIdCache[schema.plural] = !results.rows.length ? 0 : this.parseDocID(results.rows[0].id).id;
     return true;
   }
 
