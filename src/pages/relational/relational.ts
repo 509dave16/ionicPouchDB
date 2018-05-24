@@ -31,20 +31,12 @@ export class RelationalPage {
     public alertCtrl: AlertController,
   ) {
     this.init();
-    const dump = 'here';
-    const dump2 = 'and here';
   }
 
   async init() {
-    // await this.relationalService.troubleshoot();
-    // const author: ResourceModel = await this.relationalService.seedTestData();
-    // this.initializeData(author);
-    this.relationalService.seedTestData()
-      .then((author: any) => {
-        this.initializeData(author);
-
-      })
-    ;
+    await this.relationalService.troubleshoot();
+    const author: ResourceModel = await this.relationalService.seedTestData();
+    this.initializeData(author);
   }
 
   async initializeData(author: ResourceModel) {

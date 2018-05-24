@@ -1,10 +1,12 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
 import {Database} from "../classes/Database";
-import TypeSchema = Resource.TypeSchema;
+import TypeSchema = SideORM.TypeSchema;
 import {ResourceModel} from "../classes/ResourceModel";
-import {Resource} from "../namespaces/Resource.namespace";
+import {SideORM} from "../namespaces/Resource.namespace";
 import {ResourceCollection} from "../classes/ResourceCollection";
+import t from 'tcomb';
+import Properties = SideORM.Properties;
 
 @Injectable()
 export class RelationalService {
@@ -14,15 +16,27 @@ export class RelationalService {
   constructor(public superLoginService: SuperLoginService) {
   }
 
-  async init() {
+  init(): Promise<any> {
     const remote = this.superLoginService.SuperLoginClient.getDbUrl('relational');
-    const schema: TypeSchema[] = [
-      {singular: 'author', plural: 'authors', relations: {books: {hasMany: 'books'}}},
-      {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'authors'}}}
+    const authorProps: Properties = {
+      name: {type: t.String, default: ''},
+      books: {type: t.Array, elementType: t.Number, default: []},
+      id: {type: t.Number, default: null},
+      rev: {type: t.String, default: null}
+    };
+    const bookProps: Properties = {
+      title: {type: t.String, default: ''},
+      author: {type: t.maybe(t.Number), default: null},
+      id: {type: t.Number, default: null},
+      rev: {type: t.String, default: null}
+    };
+
+    const schemas: TypeSchema[] = [
+      {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}}},
+      {singular: 'book', plural: 'books', props: bookProps, relations: {author: {belongsTo: 'authors'}}}
     ];
-    this.db = new Database(schema, 'relationalDB', remote);
-    await this.db.init();
-    return this;
+    this.db = new Database(schemas, 'relationalDB', remote);
+    return this.db.init();
   }
 
   async seedTestData(): Promise<ResourceModel> {
@@ -31,17 +45,14 @@ export class RelationalService {
       if (author) {
         return author;
       }
-      // const gotBook = {title: 'A Game of Thrones', id: 6, author: 1};
-      // const hkBook = {title: 'The Hedge Knight', id: 7, author: 1};
-      // const grmAuthor = {name: 'George R. R. Martin', id: 1, books: [6, 7]};
       const gotBook = {title: 'A Game of Thrones'};
       const hkBook = {title: 'The Hedge Knight'};
       const grmAuthor = {name: 'George R. R. Martin'};
-      // await this.db.save('books', gotBook);
-      // await this.db.save('books', hkBook);
       author = await this.db.save('authors', grmAuthor);
       author.attach('books', gotBook);
       author.attach('books', hkBook);
+      await author.save({ related: true, bulk: true});
+      return author;
     // } catch (error) {
     //   console.error(error.message);
     // }

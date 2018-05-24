@@ -1,9 +1,10 @@
 import {objectClone, objectEqual} from "../utils/object.util";
 import {SideloadedDataManager} from "./SideloadedDataManager";
-import {Resource} from "../namespaces/Resource.namespace";
-import RelationDescriptor = Resource.RelationDescriptor;
-import TypeSchema = Resource.TypeSchema;
-import SaveOptions = Resource.SaveOptions;
+import {SideORM} from "../namespaces/Resource.namespace";
+import RelationDescriptor = SideORM.RelationDescriptor;
+import TypeSchema = SideORM.TypeSchema;
+import SaveOptions = SideORM.SaveOptions;
+import t from 'tcomb';
 
 export class ResourceModel {
   private resource: any;
@@ -14,6 +15,7 @@ export class ResourceModel {
 
   private relationDesc: RelationDescriptor;
   constructor(resource: any, type: string, dataManager: SideloadedDataManager) {
+    this.errorOnInvalid();
     this.type = type;
     this.dataManager = dataManager;
     this.typeSchema = this.dataManager.getTypeSchema(this.type);
@@ -59,12 +61,87 @@ export class ResourceModel {
     return this;
   }
 
-  getField(field) {
+  getField(field: string): any {
+    this.errorOnFieldNotExist(field);
+    if (this.resource[field] === undefined) {
+      return this.resource[field] = this.typeSchema.props[field].default;
+    }
     return this.resource[field];
   }
 
-  setField(field, value) {
+  setField(field: string, value: any): ResourceModel {
+    this.errorOnFieldNotExist(field);
+    this.errorOnValueTypeConflict(field, value);
     this.resource[field] = value;
+    return this;
+  }
+
+  addToField(field: string, value: any): ResourceModel {
+    this.errorOnFieldNotExist(field);
+    this.errorOnFieldNotArray(field);
+    this.errorOnValueElementTypeConflict(field, value);
+    const ara = this.getField(field) as any[];
+    ara.push(value);
+   return this;
+  }
+
+  errorOnFieldNotArray(field: string) {
+    if (!this.fieldIsArray(field)) {
+      throw new Error(`Field ${field} is not of type Array.`);
+    }
+  }
+
+  errorOnFieldNotExist(field: string) {
+    if (!this.hasField(field)) {
+      throw new Error(`Field ${field} does not exist on type.`);
+    }
+  }
+
+  errorOnValueTypeConflict(field, value) {
+    this.typeSchema.props[field].type.is(value);
+  }
+
+  errorOnValueElementTypeConflict(field, value) {
+    this.typeSchema.props[field].elementType.is(value);
+  }
+
+  errorOnInvalid() {
+    if (!this.isValid()) {
+      throw new Error('Resource is invalid');
+    }
+  }
+
+  hasField(field: string): boolean {
+    return this.typeSchema.props[field] !== undefined;
+  }
+
+  fieldIsArray(field: string): boolean {
+    return this.typeSchema.props[field].type === t.Array;
+  }
+
+  invalidFieldValue(field: string, value: any): boolean|string {
+    try {
+      this.errorOnValueTypeConflict(field, value);
+    } catch (e) {
+      return e.message;
+    }
+    return false;
+  }
+
+  isValid(): boolean {
+    return this.validate().length === 0;
+  }
+
+  validate(): string[] {
+    const errors: string[] = [];
+    for(const field in this.resource) {
+      const value = this.resource[field];
+      const reason = this.invalidFieldValue(field, value);
+      if (reason !== false) {
+        errors.push(reason as string);
+      }
+    }
+    return errors;
   }
 
   save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {

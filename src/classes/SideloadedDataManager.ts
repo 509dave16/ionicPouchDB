@@ -1,17 +1,17 @@
 import {Database} from "./Database";
-import TypeSchema = Resource.TypeSchema;
-import RootResourceDescriptor = Resource.RootResourceDescriptor;
-import {Resource} from "../namespaces/Resource.namespace";
-import SideloadedData = Resource.SideloadedData;
+import TypeSchema = SideORM.TypeSchema;
+import RootResourceDescriptor = SideORM.RootResourceDescriptor;
+import {SideORM} from "../namespaces/Resource.namespace";
+import SideloadedData = SideORM.SideloadedData;
 import {ResourceCollection} from "./ResourceCollection";
 import {ResourceModel} from "./ResourceModel";
 import {objectClone} from "../utils/object.util";
-import SaveOptions = Resource.SaveOptions;
+import SaveOptions = SideORM.SaveOptions;
 import {SideloadedModelData} from "./SideloadedModelData";
-import {RelationData} from "./RelationData";
-import ParsedDocId = Resource.ParsedDocId;
+import {RelationDataManager} from "./RelationDataManager";
+import ParsedDocId = SideORM.ParsedDocId;
 import _ from 'lodash';
-import ISideloadedModelData = Resource.ISideloadedModelData;
+import ISideloadedModelData = SideORM.ISideloadedModelData;
 
 export class SideloadedDataManager {
   private static readonly PLURALITY_MANY = 'collection';
@@ -19,7 +19,7 @@ export class SideloadedDataManager {
 
   protected rootResourceDescriptor: RootResourceDescriptor;
   public sideloadedModelData: SideloadedModelData;
-  public relationData: RelationData;
+  public rdm: RelationDataManager;
   public db: Database;
 
   constructor(rootDescriptor: RootResourceDescriptor, sideloadedData: SideloadedData, db: Database) {
@@ -31,19 +31,19 @@ export class SideloadedDataManager {
   }
 
   private init() {
-    this.relationData = new RelationData(this);
+    this.rdm = new RelationDataManager(this);
   }
 
   public getRelation(type: string, id: number, relation: string): ResourceModel|ResourceCollection {
-    return this.relationData.getRelation(type, id, relation);
+    return this.rdm.getRelation(type, id, relation);
   }
 
   public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any, inverseRelation: string) {
-    return this.relationData.attachToRelation(parentModel, relationName, modelOrResource,inverseRelation);
+    return this.rdm.attachToRelation(parentModel, relationName, modelOrResource,inverseRelation);
   }
 
   public detachFromRelation(parentModel: ResourceModel, relationName: string, modelOrId: ResourceModel|number, inverseRelation: string) {
-    return this.relationData.detachFromRelation(parentModel, relationName, modelOrId, inverseRelation);
+    return this.rdm.detachFromRelation(parentModel, relationName, modelOrId, inverseRelation);
   }
 
   public getTypeSchema(type: string): TypeSchema {
