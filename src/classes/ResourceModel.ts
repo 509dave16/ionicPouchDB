@@ -5,6 +5,8 @@ import RelationDescriptor = RanksORM.RelationDescriptor;
 import TypeSchema = RanksORM.TypeSchema;
 import SaveOptions = RanksORM.SaveOptions;
 import t from 'tcomb';
+import _ from 'lodash';
+import ParsedDocId = RanksORM.ParsedDocId;
 
 export class ResourceModel {
   private resource: any;
@@ -44,7 +46,7 @@ export class ResourceModel {
   }
 
   hasChanged(): boolean {
-    return !objectEqual(this.resource, this.originalResource);
+    return this.isNew() || !objectEqual(this.resource, this.originalResource);
   }
 
   get(relation: string) {
@@ -64,7 +66,7 @@ export class ResourceModel {
   getField(field: string): any {
     this.errorOnFieldNotExist(field);
     if (this.resource[field] === undefined) {
-      return this.resource[field] = this.typeSchema.props[field].default;
+      return this.resource[field] = this.typeSchema.props[field].default();
     }
     return this.resource[field];
   }
@@ -144,8 +146,30 @@ export class ResourceModel {
     return errors;
   }
 
-  isNewResource(): boolean {
+  isNew(): boolean {
     return this.resource['rev'] == undefined;
+  }
+
+  makeBulkDocsResource(): any {
+    const newResource: boolean = this.isNew();
+    // 1. Don't change models data
+    const resourceClone: any = objectClone(this.resource);
+    // 2. Make a relational pouch id
+    const parsedDocID: ParsedDocId = { type: this.type, id: this.id};
+    const rpId: string = this.dataManager.db.makeDocID(parsedDocID);
+    // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _id/_rev
+    const blacklistedKeys = ['_id'];
+    resourceClone._id = rpId;
+    delete resourceClone.id;
+    if (!newResource) {
+      resourceClone._rev = resourceClone.rev;
+      delete resourceClone.rev;
+      blacklistedKeys.push('_rev');
+    }
+    // 4. Make an object with _id, _rev, and data(which is everything but _id/_rev
+    const obj = _.pick(resourceClone, blacklistedKeys);
+    obj.data = _.omit(resourceClone, blacklistedKeys);
+    return obj;
   }
 
   save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {

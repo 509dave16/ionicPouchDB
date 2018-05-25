@@ -1,5 +1,4 @@
 import {ResourceCollection} from "./ResourceCollection";
-import {objectClone} from "../utils/object.util";
 import {ResourceModel} from "./ResourceModel";
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
@@ -7,7 +6,6 @@ import SaveOptions = RanksORM.SaveOptions;
 import ParsedDocId = RanksORM.ParsedDocId;
 import TypeSchema = RanksORM.TypeSchema;
 import ISideloadedModelData = RanksORM.ISideloadedModelData;
-import _ from 'lodash';
 import {RelationDataManager} from "./RelationDataManager";
 import RelationDescriptor = RanksORM.RelationDescriptor;
 
@@ -52,7 +50,7 @@ export class PersistenceManager {
   }
 
   private createNewDocId(model: ResourceModel) {
-    if (model.isNewResource()) {
+    if (model.isNew()) {
       const docId: number = this.dm.db.getNextMaxDocId(model.type);
       this.setNewDocId(model.type, model.id, docId);
       model.setField('id', docId);
@@ -103,33 +101,42 @@ export class PersistenceManager {
     model.refreshOriginalResource();
   }
 
-  private makeBulkDocsResource(model: ResourceModel): any {
-    // 1. Don't change models data
-    const resourceClone: any = objectClone(model.getResource());
-    // 2. Make a relational pouch id
-    const { type, id } = model;
-    const parsedDocID: ParsedDocId = { type, id};
-    const rpId: string = this.dm.db.makeDocID(parsedDocID);
-    // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _id/_rev
-    resourceClone._id = rpId;
-    resourceClone._rev = resourceClone.rev;
-    delete resourceClone.id;
-    delete resourceClone.rev;
-    // 4. Make an object with _id, _rev, and data(which is everything but _id/_rev
-    const blacklistedKeys = ['_id', '_rev'];
-    const data = _.omit(resourceClone, blacklistedKeys);
-    const obj = _.pick(resourceClone, blacklistedKeys);
-    obj.data = data;
-    return obj;
+  private handleBulkDocResponseElement(response: any) {
+    if (response.error && response.name === 'conflict') {
+
+    } else if(response.ok) {
+
+    } else {
+
+    }
   }
 
   private async saveAllBulk() {
     const models: ResourceModel[] = this.dm.sideloadedModelData.getFlattenedData() as ResourceModel[];
     const changedModels: ResourceModel[] = models.filter((model: ResourceModel) => model.hasChanged());
-    const changedResources: any[] = changedModels.map((model: ResourceModel) => this.makeBulkDocsResource(model));
-    const docsMetadata: any[] = await this.dm.db.bulkDocs(changedResources);
-    docsMetadata.forEach((docMetadata: any) => this.updateResourceModelMetadata(docMetadata));
+    await  this.saveNewResources(changedModels);
+    await this.saveUpdatedResources(changedModels);
     return this;
+  }
+
+  private async saveNewResources(changedModels: ResourceModel[]) {
+    const newResources: any[] = changedModels.filter((model: ResourceModel) => model.isNew()).map((model: ResourceModel) => model.makeBulkDocsResource());
+    const newDocsMetadata: any[] = await this.dm.db.bulkDocs(newResources);
+    newDocsMetadata.forEach((docMetadata: any) => this.updateResourceModelMetadata(docMetadata));
+    // newResources.push({
+    //   _id: 'book_1_0000000000000012',
+    //   data: { name: 'its me'},
+    // });
+    // newResources.push({
+    //   _id: 'book_1_0000000000000013',
+    //   data: { name: 'its me'},
+    // });
+  }
+
+  private async saveUpdatedResources(changedModels: ResourceModel[]) {
+    const updatedResources: any[] = changedModels.filter((model: ResourceModel) => !model.isNew()).map((model: ResourceModel) => model.makeBulkDocsResource());
+    const updatedDocsMetadata: any[] = await this.dm.db.bulkDocs(updatedResources);
+    updatedDocsMetadata.forEach((docMetadata: any) => this.updateResourceModelMetadata(docMetadata));
   }
 
   private async saveAllIndividually() {

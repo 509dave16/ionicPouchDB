@@ -8,7 +8,8 @@ export class RelationDataManager {
   public static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
   public static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
   private readonly dm: SideloadedDataManager;
-  protected relationCache: any = {};
+  private parentToChildCache: any = {};
+  private childToParentCache: any = {};
 
   constructor(dm: SideloadedDataManager) {
     this.dm = dm;
@@ -26,13 +27,14 @@ export class RelationDataManager {
   }
 
   private errorIfValueIsUndefined(name, value) {
-    if (!value) {
+    if (value === undefined || value === null) {
       throw new Error(`${name} is undefined.`);
     }
   }
 
   private cacheRelations() {
-    this.relationCache = {};
+    this.parentToChildCache = {};
+    this.childToParentCache = {};
     const data: any = this.dm.sideloadedModelData.getData();
     for (const type of  Object.keys(data)) {
       const models: ResourceModel[] = data[type];
@@ -45,45 +47,51 @@ export class RelationDataManager {
     const schema = this.dm.getTypeSchema(model.type);
     for (const relationName of Object.keys(schema.relations)) {
       const descriptor: RelationDescriptor = this.getRelationDescriptor(model, relationName);
-      let value: ResourceCollection|ResourceModel = null;
       if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
-        const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
-        if (!resourceModel) return;
-        resourceModel.setRelationDescriptor(descriptor);
-        value = resourceModel;
+        const childModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, model.getField(relationName));
+        if (!childModel) return;
+        childModel.setRelationDescriptor(descriptor);
+        this.setRelation(this.childToParentCache, childModel, relationName, model);
+        this.setRelation(this.parentToChildCache, model, relationName, childModel);
       } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
         const models: ResourceModel[] = this.dm.sideloadedModelData.getResourceModelsByTypeAndIds(descriptor.relationResourceType, model.getField(relationName));
+        models.forEach((childModel: ResourceModel) => this.setRelation(this.childToParentCache, childModel, relationName, model));
         const resourceCollection: ResourceCollection = new ResourceCollection(models, descriptor, this.dm);
-        value = resourceCollection;
+        this.setRelation(this.parentToChildCache, model, relationName, resourceCollection);
       }
-      this.setRelation(model, relationName, value);
     }
   }
 
-  private setRelation(parent: ResourceModel, relation: string, value: ResourceModel|ResourceCollection) {
+  private setRelation(cache: any, parent: ResourceModel, relation: string, value: ResourceModel|ResourceCollection) {
     this.errorIfValueIsUndefined('parent Model', parent);
     this.errorIfValueIsUndefined('child Model/Collection', value);
-    this.errorIfRelationDoesntExist(parent.type, relation);
+    if (cache === this.parentToChildCache) {
+      this.errorIfRelationDoesntExist(parent.type, relation);
+    }
     const { type, id } = parent;
-    if (this.relationCache[type] === undefined) this.relationCache[type] = {};
-    if (this.relationCache[type][id] === undefined) this.relationCache[type][id] = {};
-    this.relationCache[type][id][relation] = value;
+    if (cache[type] === undefined) cache[type] = {};
+    if (cache[type][id] === undefined) cache[type][id] = {};
+    cache[type][id][relation] = value;
   }
 
-  private unsetRelation(parent: ResourceModel, relation: string) {
+  private unsetRelation(cache: any, parent: ResourceModel, relation: string) {
     this.errorIfValueIsUndefined('parent Model', parent);
-    this.errorIfRelationDoesntExist(parent.type, relation);
+    if (cache === this.parentToChildCache) {
+      this.errorIfRelationDoesntExist(parent.type, relation);
+    }
     const { type, id } = parent;
-    if (this.relationCache[type] === undefined) this.relationCache[type] = {};
-    if (this.relationCache[type][id] === undefined) this.relationCache[type][id] = {};
-    this.relationCache[type][id][relation] = undefined;
+    if (cache[type] === undefined) cache[type] = {};
+    if (cache[type][id] === undefined) cache[type][id] = {};
+    cache[type][id][relation] = undefined;
   }
 
-  public getRelation(type: string, id: number, relation: string): ResourceModel|ResourceCollection {
-    this.errorIfRelationDoesntExist(type, relation);
-    if (this.relationCache[type] === undefined) return null;
-    if (this.relationCache[type][id] === undefined) return null;
-    return this.relationCache[type][id][relation];
+  public getRelation(type: string, id: number, relation: string, cache: any = this.parentToChildCache): ResourceModel|ResourceCollection {
+    if (cache === this.parentToChildCache) {
+      this.errorIfRelationDoesntExist(type, relation);
+    }
+    if (cache[type] === undefined) return null;
+    if (cache[type][id] === undefined) return null;
+    return cache[type][id][relation];
   }
 
   public getInverseDescriptor(parentDescriptor: RelationDescriptor, childModel: ResourceModel, relationName: string = ''): RelationDescriptor {
@@ -108,7 +116,7 @@ export class RelationDataManager {
     return '';
   }
 
-  public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any, inverseRelationName: string = '') {
+  public attachToRelation(parentModel: ResourceModel, relationName: string, modelOrResource: ResourceModel|any, inverseRelationName: any = '') {
     // 1. Get Descriptors for additions
     this.errorIfValueIsUndefined('parent model', parentModel);
     const descriptor = this.getRelationDescriptor(parentModel, relationName);
@@ -121,7 +129,7 @@ export class RelationDataManager {
       childModel = new ResourceModel(resource, descriptor.relationResourceType, this.dm)
     }
     this.errorIfValueIsUndefined('child model', childModel);
-    const inverseDescriptor: RelationDescriptor = this.getInverseDescriptor(descriptor, childModel, inverseRelationName);
+    const inverseDescriptor: RelationDescriptor = inverseRelationName === false ? null : this.getInverseDescriptor(descriptor, childModel, inverseRelationName);
 
     // 2. Make sure that the model will exist in the SideloadedModelData
     const resourceModel: ResourceModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, childModel.id);
@@ -137,13 +145,15 @@ export class RelationDataManager {
     const relationName: string = descriptor.relationName;
     if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, childModel.id);
-      this.setRelation(parentModel, relationName, childModel);
+      this.setRelation(this.parentToChildCache, parentModel, relationName, childModel);
+      this.setRelation(this.childToParentCache, childModel, relationName, parentModel);
     } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
-      const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
+      const collection = this.getRelation(parentModel.type, parentModel.id, relationName, this.parentToChildCache) as ResourceCollection;
       const modelExists = collection.find((resourceModel: ResourceModel) => resourceModel.id === childModel.id );
       if (!modelExists) {
         collection._push(childModel);
         parentModel.addToField(relationName, childModel.id);
+        this.setRelation(this.childToParentCache, childModel, relationName, parentModel);
       }
     }
   }
@@ -152,7 +162,7 @@ export class RelationDataManager {
     return value !== undefined && (value as ResourceModel).type !== undefined;
   }
 
-  public detachFromRelation(parentModel: ResourceModel, relationName: string, childModelOrId: ResourceModel|number, inverseRelationName: string = '') {
+  public detachFromRelation(parentModel: ResourceModel, relationName: string, childModelOrId: ResourceModel|number, inverseRelationName: any = '') {
     this.errorIfValueIsUndefined('parent model', parentModel);
     const descriptor: RelationDescriptor = this.getRelationDescriptor(parentModel, relationName);
     let childModel: ResourceModel;
@@ -162,7 +172,7 @@ export class RelationDataManager {
       childModel = this.dm.sideloadedModelData.getResourceModelByTypeAndId(descriptor.relationResourceType, childModelOrId as number);
     }
     this.errorIfValueIsUndefined('child model', childModel);
-    const inverseDescriptor = this.getInverseDescriptor(descriptor, childModel);
+    const inverseDescriptor = inverseRelationName === false ? null : this.getInverseDescriptor(descriptor, childModel);
     if (inverseDescriptor) { this.removeFromRelation(inverseDescriptor, parentModel) }
     this.removeFromRelation(descriptor, childModel);
   }
@@ -172,11 +182,15 @@ export class RelationDataManager {
     const relationName: string = descriptor.relationName;
     if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, null);
-      this.unsetRelation(parentModel, relationName);
+      this.unsetRelation(this.parentToChildCache, parentModel, relationName);
+      this.unsetRelation(this.childToParentCache, childModel, relationName);
     } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
-      const collection = this.getRelation(parentModel.type, parentModel.id, relationName) as ResourceCollection;
+      const collection = this.getRelation(parentModel.type, parentModel.id, relationName, this.parentToChildCache) as ResourceCollection;
       const modelIndex= collection.findIndex((resourceModel: ResourceModel) => resourceModel.id === childModel.id );
-      if (modelIndex !== -1) { collection._splice(modelIndex, 1); }
+      if (modelIndex !== -1) {
+        this.unsetRelation(this.childToParentCache, childModel, relationName);
+        collection._splice(modelIndex, 1);
+      }
       const idIndex = parentModel.getField(relationName).findIndex((id: number) => id === childModel.id);
       if (idIndex !== -1) { parentModel.getField(relationName).splice(idIndex, 1); }
     }

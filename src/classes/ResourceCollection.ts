@@ -14,6 +14,10 @@ export class ResourceCollection {
     this.dataManager = dataManager;
   }
 
+  get(index: number): ResourceModel {
+    return this.models[index];
+  }
+
   add(modelOrResource: ResourceModel|any, inverseRelation?:string ): ResourceCollection {
     const { parent, relationName } = this.relationDesc;
     this.dataManager.attachToRelation(parent, relationName, modelOrResource, inverseRelation);
