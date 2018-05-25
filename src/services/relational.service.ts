@@ -49,8 +49,10 @@ export class RelationalService {
       if (author) {
         return author;
       }
-      const gotBook = {title: 'A Game of Thrones'};
-      const hkBook = {title: 'The Hedge Knight'};
+      // const gotBook = {title: 'A Game of Thrones', id: 132};
+      // const hkBook = {title: 'The Hedge Knight', id: 133};
+    const gotBook = {title: 'A Game of Thrones'};
+    const hkBook = {title: 'The Hedge Knight'};
       const grmAuthor = {name: 'George R. R. Martin'};
       author = await this.db.save('authors', grmAuthor);
       await author.attach('books', gotBook)

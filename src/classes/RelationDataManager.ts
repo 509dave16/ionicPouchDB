@@ -8,6 +8,8 @@ export class RelationDataManager {
   public static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
   public static readonly RELATION_TYPE_BELONGS_TO = 'belongsTo';
   private readonly dm: SideloadedDataManager;
+  public static readonly PARENT_TO_CHILD_CACHE = 'parentToChildCache';
+  public static readonly CHILD_TO_PARENT_CACHE = 'childToParentCache';
   private parentToChildCache: any = {};
   private childToParentCache: any = {};
 
@@ -30,6 +32,19 @@ export class RelationDataManager {
     if (value === undefined || value === null) {
       throw new Error(`${name} is undefined.`);
     }
+  }
+
+  private getCache(cache: any) {
+    if (typeof cache === 'string') {
+      if (this[cache] == undefined) { throw new Error(`Cache ${cache} does not exist.`) }
+      return this[cache];
+    }
+    return cache;
+  }
+
+  public getCacheOf(cache: any, type: string, id: number): any {
+    cache = this.getCache(cache);
+    return cache[type][id];
   }
 
   private cacheRelations() {
@@ -63,6 +78,7 @@ export class RelationDataManager {
   }
 
   private setRelation(cache: any, parent: ResourceModel, relation: string, value: ResourceModel|ResourceCollection) {
+    cache = this.getCache(cache);
     this.errorIfValueIsUndefined('parent Model', parent);
     this.errorIfValueIsUndefined('child Model/Collection', value);
     if (cache === this.parentToChildCache) {
@@ -75,6 +91,7 @@ export class RelationDataManager {
   }
 
   private unsetRelation(cache: any, parent: ResourceModel, relation: string) {
+    cache = this.getCache(cache);
     this.errorIfValueIsUndefined('parent Model', parent);
     if (cache === this.parentToChildCache) {
       this.errorIfRelationDoesntExist(parent.type, relation);
@@ -86,6 +103,7 @@ export class RelationDataManager {
   }
 
   public getRelation(type: string, id: number, relation: string, cache: any = this.parentToChildCache): ResourceModel|ResourceCollection {
+    cache = this.getCache(cache);
     if (cache === this.parentToChildCache) {
       this.errorIfRelationDoesntExist(type, relation);
     }
@@ -123,6 +141,8 @@ export class RelationDataManager {
     let childModel: ResourceModel;
     if (this.isModel(modelOrResource)) {
       childModel = modelOrResource as ResourceModel;
+    } else if(modelOrResource.id !== undefined) {
+      childModel = new ResourceModel(modelOrResource, descriptor.relationResourceType, this.dm);
     } else if(modelOrResource !== undefined) {
       const resource: any = modelOrResource;
       resource.id = this.dm.db.getNextMaxDocId(descriptor.relationResourceType);
