@@ -34,23 +34,27 @@ export class MyApp {
   @ViewChild('rootNavComponent') private rootNavComponent: Nav;
 
   constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService) {
-    platform.ready().then(() => {
-      PouchDB.plugin(RelationalPouch);
-      PouchDB.plugin(PouchDbFind);
-      if (superLoginService.SuperLoginClient.authenticated()) {
-        // todoService.init();
-        relationalService.init();
-        // this.rootNavComponent.setRoot(HomePage, {});
-        this.rootNavComponent.setRoot(RelationalPage, {});
-      } else {
-        this.rootNavComponent.setRoot(LoginPage, {});
-      }
-      // Okay, so the platform is ready and our plugins are available.
-      // Here you can do any higher level native things you might need.
-      statusBar.styleDefault();
-      splashScreen.hide();
-    });
+    this.init(platform, statusBar, splashScreen, superLoginService, todoService, relationalService);
   }
+
+  private async init(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService) {
+    await platform.ready();
+    PouchDB.plugin(RelationalPouch);
+    PouchDB.plugin(PouchDbFind);
+    if (superLoginService.SuperLoginClient.authenticated()) {
+      // todoService.init();
+      await relationalService.init();
+      // this.rootNavComponent.setRoot(HomePage, {});
+      this.rootNavComponent.setRoot(RelationalPage, {});
+    } else {
+      this.rootNavComponent.setRoot(LoginPage, {});
+    }
+    // Okay, so the platform is ready and our plugins are available.
+    // Here you can do any higher level native things you might need.
+    statusBar.styleDefault();
+    splashScreen.hide();
+  }
+
 
   gotoPage(pageKey) {
     const page = this.pages[pageKey];
