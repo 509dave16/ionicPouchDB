@@ -199,14 +199,24 @@ export class Database {
       limit: 1,
       descending: true
     });
-    this.maxDocIdCache[schema.plural] = !results.rows.length ? 0 : this.parseDocID(results.rows[0].id).id;
+    if (results.rows.length) {
+      const newDocId = this.parseDocID(results.rows[0].id).id;
+      const currentDocId = this.getNextMaxDocId(schema.plural);
+      this.maxDocIdCache[schema.plural] = newDocId > currentDocId ? newDocId : currentDocId;
+    } else {
+      this.maxDocIdCache[schema.plural] = 0;
+    }
     return true;
   }
 
   public getNextMaxDocId(type: string): number {
-    if (this.maxDocIdCache[type] === undefined) {
-      throw new Error(`type ${type} does not exist as key in cache.`);
+    if(this.schema[type]) {
+      throw new Error(`schema ${type} does not exist.`);
     }
-    return this.maxDocIdCache[type] = ++this.maxDocIdCache[type];
+    if (this.maxDocIdCache[type] === undefined) {
+      this.maxDocIdCache[type] = 0;
+    }
+    this.maxDocIdCache[type] = ++this.maxDocIdCache[type];
+    return this.maxDocIdCache[type];
   }
 }
