@@ -31,7 +31,7 @@ export namespace RanksORM {
   }
 
   export interface Properties {
-    [propName: string] : { type: t.Type<any>, elementType?: t.Type<any>, default: any };
+    [propName: string] : { type: t.Type<any>, elementType?: t.Type<any>, default: Function };
   }
 
   export interface TypeSchema {

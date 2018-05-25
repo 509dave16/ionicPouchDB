@@ -18,17 +18,22 @@ export class RelationalService {
 
   init(): Promise<any> {
     const remote = this.superLoginService.SuperLoginClient.getDbUrl('relational');
+    const commonProps: Properties = {
+      deleted_at: { type: t.maybe(t.Date), default: () => null },
+      updated_at: { type: t.maybe(t.Date), default: () => null },
+      created_at: { type: t.maybe(t.Date), default: () => null },
+      id: {type: t.Number, default: () => null},
+      rev: {type: t.String, default: () => null}
+    }
     const authorProps: Properties = {
-      name: {type: t.String, default: ''},
-      books: {type: t.Array, elementType: t.Number, default: []},
-      id: {type: t.Number, default: null},
-      rev: {type: t.String, default: null}
+      ...commonProps,
+      name: {type: t.String, default: () => ''},
+      books: {type: t.Array, elementType: t.Number, default: () => []},
     };
     const bookProps: Properties = {
-      title: {type: t.String, default: ''},
-      author: {type: t.maybe(t.Number), default: null},
-      id: {type: t.Number, default: null},
-      rev: {type: t.String, default: null}
+      ...commonProps,
+      title: {type: t.String, default: () => ''},
+      author: {type: t.maybe(t.Number), default: () => null},
     };
 
     const schemas: TypeSchema[] = [
