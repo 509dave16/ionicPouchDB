@@ -1,43 +1,44 @@
-import {ResourceModel} from "./ResourceModel";
-import {SideloadedDataManager} from "./SideloadedDataManager";
+import {DocModel} from "./DocModel";
+import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
 import RelationDescriptor = RanksORM.RelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
+import DataDescriptorCollection = RanksORM.DataDescriptorCollection;
 
-export class ResourceCollection {
-  private dataManager: SideloadedDataManager;
+export class DocCollection implements DataDescriptorCollection{
+  private dataManager: RanksMediator;
   private readonly  relationDesc: RelationDescriptor;
-  private readonly models: ResourceModel[];
-  constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: SideloadedDataManager) {
+  private readonly models: DocModel[];
+  constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: RanksMediator) {
     this.models = models;
     this.relationDesc = relationDesc;
     this.dataManager = dataManager;
   }
 
-  get(index: number): ResourceModel {
+  get(index: number): DocModel {
     return this.models[index];
   }
 
-  add(modelOrResource: ResourceModel|any, inverseRelation?:string ): ResourceCollection {
+  add(modelOrDoc: DocModel|any, inverseRelation?:string ): DocCollection {
     const { parent, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(parent, relationName, modelOrResource, inverseRelation);
+    this.dataManager.attachToRelation(parent, relationName, modelOrDoc, inverseRelation);
     return this;
   }
 
-  remove(modelOrId: ResourceModel|number, inverseRelation?: string): ResourceCollection {
+  remove(modelOrId: DocModel|number, inverseRelation?: string): DocCollection {
     const { parent, relationName } = this.relationDesc;
     this.dataManager.detachFromRelation(parent, relationName, modelOrId, inverseRelation);
     return this;
   }
 
-  first(): ResourceModel {
+  first(): DocModel {
     if (this.length) {
       return this[0];
     }
     return null;
   }
 
-  last(): ResourceModel {
+  last(): DocModel {
     if (this.length) {
       return this[this.length - 1];
     }
@@ -69,13 +70,5 @@ export class ResourceCollection {
 
   findIndex(callback, thisArg?: any) {
     return this.models.findIndex(callback, thisArg)
-  }
-
-  /** Private Array Member Implementations **/
-  _push(model: ResourceModel) {
-    this.models.push(model);
-  }
-  _splice(start: number, deleteCount?: number) {
-    this.models.splice(start, deleteCount);
   }
 }

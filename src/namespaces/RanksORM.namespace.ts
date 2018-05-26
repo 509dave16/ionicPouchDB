@@ -1,29 +1,47 @@
-import {ResourceQuery} from "../classes/Database";
-import {ResourceModel} from "../classes/ResourceModel";
+import {DocModel} from "../classes/DocModel";
 import t from 'tcomb';
+import {DocCollection} from "../classes/DocCollection";
+import {DataRelations} from "../classes/DataRelations";
 
 export namespace RanksORM {
   export interface SideloadedData {
     [type: string]: any[];
   }
 
-  export interface ISideloadedModelData {
-    [type: string]: ResourceModel[];
+  export interface ISideloadedRankModels {
+    [type: string]: DocModel[];
   }
 
-  export interface RootResourceDescriptor {
+  export interface DataRelationsConstructor {
+    new (): DataRelations;
+  }
+
+  export interface DataDescriptor {
+    id: number;
+    type: string;
+  }
+
+  export interface DataDescriptorCollection {
+
+  }
+
+  export interface DocQuery {
+    (): Promise<DocModel|DocCollection>;
+  }
+
+  export interface RootDocDescriptor {
     ids: number[];
     type: string;
     plurality: 'model' | 'collection';
-    query: ResourceQuery;
+    query: DocQuery;
   }
 
   export interface RelationDescriptor {
     relationType: string;
-    relationResourceType: string;
+    relationDocType: string;
     relationName: string;
-    parent: ResourceModel;
-    parentResourceType: string;
+    parent: DocModel;
+    parentDocType: string;
   }
 
   export interface Relations {

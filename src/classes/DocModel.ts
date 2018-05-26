@@ -1,5 +1,5 @@
 import {objectClone, objectEqual} from "../utils/object.util";
-import {SideloadedDataManager} from "./SideloadedDataManager";
+import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
 import RelationDescriptor = RanksORM.RelationDescriptor;
 import TypeSchema = RanksORM.TypeSchema;
@@ -7,22 +7,23 @@ import SaveOptions = RanksORM.SaveOptions;
 import t from 'tcomb';
 import _ from 'lodash';
 import ParsedDocId = RanksORM.ParsedDocId;
+import DataDescriptor = RanksORM.DataDescriptor;
 
-export class ResourceModel {
-  private resource: any;
-  private originalResource: any;
+export class DocModel implements DataDescriptor {
+  private doc: any;
+  private originalDoc: any;
   public type: string;
-  private dataManager: SideloadedDataManager;
+  private mediator: RanksMediator;
   private typeSchema: TypeSchema;
 
   private relationDesc: RelationDescriptor;
-  constructor(resource: any, type: string, dataManager: SideloadedDataManager) {
+  constructor(doc: any, type: string, mediator: RanksMediator) {
     this.errorOnInvalid();
     this.type = type;
-    this.dataManager = dataManager;
-    this.typeSchema = this.dataManager.getTypeSchema(this.type);
-    this.originalResource = resource;
-    this.resource = objectClone(resource);
+    this.mediator = mediator;
+    this.typeSchema = this.mediator.getTypeSchema(this.type);
+    this.originalDoc = doc;
+    this.doc = objectClone(doc);
   }
 
   setRelationDescriptor(relationDesc: RelationDescriptor) {
@@ -30,55 +31,55 @@ export class ResourceModel {
   }
 
   get id(): number {
-    return this.resource.id;
+    return this.doc.id;
   }
 
-  getResource(): any {
-    return this.resource;
+  getDoc(): any {
+    return this.doc;
   }
 
-  setResource(resource: any) {
-    this.resource = resource;
+  setDoc(doc: any) {
+    this.doc = doc;
   }
 
-  refreshOriginalResource() {
-    this.originalResource = objectClone(this.resource);
+  refreshOriginalDoc() {
+    this.originalDoc = objectClone(this.doc);
   }
 
   hasChanged(): boolean {
-    return this.isNew() || !objectEqual(this.resource, this.originalResource);
+    return this.isNew() || !objectEqual(this.doc, this.originalDoc);
   }
 
   get(relation: string) {
-    return this.dataManager.getRelation(this.type, this.resource.id, relation);
+    return this.mediator.getRelation(this, relation);
   }
 
-  attach(relation: string, modelOrResource: ResourceModel|any, inverseRelation?: string): ResourceModel {
-    this.dataManager.attachToRelation(this, relation, modelOrResource, inverseRelation);
+  attach(relation: string, modelOrDoc: DocModel|any, inverseRelation?: string): DocModel {
+    this.mediator.attachToRelation(this, relation, modelOrDoc, inverseRelation);
     return this;
   }
 
-  detach(relation: string, modelOrId: ResourceModel|number, inverseRelation?: string): ResourceModel {
-    this.dataManager.detachFromRelation(this, relation, modelOrId, inverseRelation);
+  detach(relation: string, modelOrId: DocModel|number, inverseRelation?: string): DocModel {
+    this.mediator.detachFromRelation(this, relation, modelOrId, inverseRelation);
     return this;
   }
 
   getField(field: string): any {
     this.errorOnFieldNotExist(field);
-    if (this.resource[field] === undefined) {
-      return this.resource[field] = this.typeSchema.props[field].default();
+    if (this.doc[field] === undefined) {
+      return this.doc[field] = this.typeSchema.props[field].default();
     }
-    return this.resource[field];
+    return this.doc[field];
   }
 
-  setField(field: string, value: any): ResourceModel {
+  setField(field: string, value: any): DocModel {
     this.errorOnFieldNotExist(field);
     this.errorOnValueTypeConflict(field, value);
-    this.resource[field] = value;
+    this.doc[field] = value;
     return this;
   }
 
-  addToField(field: string, value: any): ResourceModel {
+  addToField(field: string, value: any): DocModel {
     this.errorOnFieldNotExist(field);
     this.errorOnFieldNotArray(field);
     this.errorOnValueElementTypeConflict(field, value);
@@ -109,7 +110,7 @@ export class ResourceModel {
 
   errorOnInvalid() {
     if (!this.isValid()) {
-      throw new Error('Resource is invalid');
+      throw new Error('Doc is invalid');
     }
   }
 
@@ -136,8 +137,8 @@ export class ResourceModel {
 
   validate(): string[] {
     const errors: string[] = [];
-    for(const field in this.resource) {
-      const value = this.resource[field];
+    for(const field in this.doc) {
+      const value = this.doc[field];
       const reason = this.invalidFieldValue(field, value);
       if (reason !== false) {
         errors.push(reason as string);
@@ -147,32 +148,32 @@ export class ResourceModel {
   }
 
   isNew(): boolean {
-    return this.resource['rev'] == undefined;
+    return this.doc['rev'] == undefined;
   }
 
-  makeBulkDocsResource(): any {
-    const newResource: boolean = this.isNew();
+  createDoc(): any {
+    const isNewDoc: boolean = this.isNew();
     // 1. Don't change models data
-    const resourceClone: any = objectClone(this.resource);
+    const clonedDoc: any = objectClone(this.doc);
     // 2. Make a relational pouch id
     const parsedDocID: ParsedDocId = { type: this.type, id: this.id};
-    const rpId: string = this.dataManager.db.makeDocID(parsedDocID);
+    const rpId: string = this.mediator.db.makeDocID(parsedDocID);
     // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _id/_rev
     const blacklistedKeys = ['_id'];
-    resourceClone._id = rpId;
-    delete resourceClone.id;
-    if (!newResource) {
-      resourceClone._rev = resourceClone.rev;
-      delete resourceClone.rev;
+    clonedDoc._id = rpId;
+    delete clonedDoc.id;
+    if (!isNewDoc) {
+      clonedDoc._rev = clonedDoc.rev;
+      delete clonedDoc.rev;
       blacklistedKeys.push('_rev');
     }
     // 4. Make an object with _id, _rev, and data(which is everything but _id/_rev
-    const obj = _.pick(resourceClone, blacklistedKeys);
-    obj.data = _.omit(resourceClone, blacklistedKeys);
-    return obj;
+    const formattedDoc = _.pick(clonedDoc, blacklistedKeys);
+    formattedDoc.data = _.omit(clonedDoc, blacklistedKeys);
+    return formattedDoc;
   }
 
   save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {
-    return this.dataManager.save(options);
+    return this.mediator.save(options);
   }
 }

@@ -7,31 +7,30 @@
  * We have some logic in here for updating Models ids. This should be moved to the specific cache implementation that is affects
  */
 
-import {ResourceCollection} from "./ResourceCollection";
-import {ResourceModel} from "./ResourceModel";
-import {SideloadedDataManager} from "./SideloadedDataManager";
+import {DocCollection} from "./DocCollection";
+import {DocModel} from "./DocModel";
+import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
 import SaveOptions = RanksORM.SaveOptions;
 import ParsedDocId = RanksORM.ParsedDocId;
 import TypeSchema = RanksORM.TypeSchema;
-import ISideloadedModelData = RanksORM.ISideloadedModelData;
-import {RelationDataManager} from "./RelationDataManager";
+import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
+import {RelationManager} from "./RelationManager";
 import RelationDescriptor = RanksORM.RelationDescriptor;
 
 export class PersistenceManager {
-  private dm: SideloadedDataManager;
-  private newDocIds: any;
-  constructor(dm: SideloadedDataManager) {
-    this.dm = dm;
+  private mediator: RanksMediator;
+  constructor(mediator: RanksMediator) {
+    this.mediator = mediator;
   }
 
-  public async save(options: SaveOptions, modelOrCollection: ResourceModel|ResourceCollection): Promise<ResourceModel|ResourceCollection> {
+  public async save(options: SaveOptions, modelOrCollection: DocModel|DocCollection): Promise<DocModel|DocCollection> {
     if (options.related) {
       await options.bulk ? this.saveAllBulk() : this.saveAllIndividually();
-    } else if (modelOrCollection instanceof  ResourceModel) {
+    } else if (modelOrCollection instanceof  DocModel) {
       await this.saveModel(modelOrCollection);
     } else {
-      const writes: Promise<any>[] = modelOrCollection.map((model: ResourceModel) => this.saveModel(model));
+      const writes: Promise<any>[] = modelOrCollection.map((model: DocModel) => this.saveModel(model));
       await Promise.all(writes);
     }
     return modelOrCollection;
@@ -39,90 +38,91 @@ export class PersistenceManager {
 
   private async saveAllIndividually() {
     const writes: Promise<any>[] = [];
-    const data: ISideloadedModelData = this.dm.sideloadedModelData.getData();
+    const data: ISideloadedRankModels = this.mediator.ranks.getRanks();
     for (const type of Object.keys(data)) {
-      data[type].map((model: ResourceModel) => writes.push(this.saveModel(model)));
+      data[type].map((model: DocModel) => writes.push(this.saveModel(model)));
     }
     await Promise.all(writes);
     return this;
   }
 
-  private async saveModel(model: ResourceModel): Promise<ResourceModel> {
+  private async saveModel(model: DocModel): Promise<DocModel> {
     if (!model.hasChanged()) {
       return model;
     }
-    const updatedModel: ResourceModel = await this.dm.db.save(model.type, model.getResource()) as ResourceModel;
-    const data = updatedModel.getResource();
-    model.setResource(data);
-    model.refreshOriginalResource();
+    const updatedModel: DocModel = await this.mediator.db.save(model.type, model.getDoc()) as DocModel;
+    const data = updatedModel.getDoc();
+    model.setDoc(data);
+    model.refreshOriginalDoc();
     return model;
   }
 
   private async saveAllBulk() {
-    await  this.saveNewResources();
-    await this.saveUpdatedResources();
+    await  this.saveNewDocs();
+    await this.saveUpdatedDocs();
     return this;
   }
 
-  private async saveNewResources() {
-    const changedModels: ResourceModel[] = this.getChangedModels();
-    const newResources: any[] = changedModels.filter((model: ResourceModel) => model.isNew()).map((model: ResourceModel) => model.makeBulkDocsResource());
-    const responses: any[] = await this.dm.db.bulkDocs(newResources);
+  private async saveNewDocs() {
+    const changedModels: DocModel[] = this.getChangedModels();
+    const newDocs: any[] = changedModels.filter((model: DocModel) => model.isNew()).map((model: DocModel) => model.createDoc());
+    const responses: any[] = await this.mediator.db.bulkDocs(newDocs);
     return Promise.all(responses.map((response: any, index: number) => this.handleResponse(response, index)));
   }
 
-  private async saveUpdatedResources() {
-    const changedModels: ResourceModel[] = this.getChangedModels();
-    const updatedResources: any[] = changedModels.filter((model: ResourceModel) => !model.isNew()).map((model: ResourceModel) => model.makeBulkDocsResource());
-    const responses: any[] = await this.dm.db.bulkDocs(updatedResources);
+  private async saveUpdatedDocs() {
+    const changedModels: DocModel[] = this.getChangedModels();
+    const updatedDocs: any[] = changedModels.filter((model: DocModel) => !model.isNew()).map((model: DocModel) => model.createDoc());
+    const responses: any[] = await this.mediator.db.bulkDocs(updatedDocs);
     return Promise.all(responses.map((response: any, index) => this.handleResponse(response, index)));
   }
 
-  private getChangedModels(): ResourceModel[] {
-    const models: ResourceModel[] = this.dm.sideloadedModelData.getFlattenedData() as ResourceModel[];
-    return models.filter((model: ResourceModel) => model.hasChanged());
+  private getChangedModels(): DocModel[] {
+    const models: DocModel[] = this.mediator.ranks.getFlattenedRanks() as DocModel[];
+    return models.filter((model: DocModel) => model.hasChanged());
   }
 
 
   private async handleResponse(response: any, index: number) {
     if (response.error && response.name === 'conflict') {
       if (index === 0) {
-        await this.dm.db.initializeMaxDocIdCache();
+        await this.mediator.initializeDocIdCache();
       }
-      const newResponse = await this.retrySavingNewResource(response);
+      const newResponse = await this.retrySavingNewDoc(response);
       return this.handleResponse(newResponse, 0);
-    } else if(response.ok || response instanceof  ResourceModel) {
-      this.updateResourceModelRev(response);
+    } else if(response.ok || response instanceof  DocModel) {
+      this.updateDocModelRev(response);
     } else {
       console.error(response);
     }
     return true;
   }
 
-  private updateResourceModelRev(response: any) {
-    const model: ResourceModel = this.getModelFromResponse(response);
-    const rev: string = response instanceof  ResourceModel ? (response as ResourceModel).getField('rev') : response.rev;
+  private updateDocModelRev(response: any) {
+    const model: DocModel = this.getModelFromResponse(response);
+    const rev: string = response instanceof  DocModel ? (response as DocModel).getField('rev') : response.rev;
     model.setField('rev', rev);
-    model.refreshOriginalResource();
+    model.refreshOriginalDoc();
   }
 
-  private retrySavingNewResource(response: any) {
-    const model: ResourceModel = this.getModelFromResponse(response);
-    const newDocId = this.dm.db.getNextMaxDocId(model.type);
+  private retrySavingNewDoc(response: any) {
+    const model: DocModel = this.getModelFromResponse(response);
+    const newDocId = this.mediator.getNextDocId(model.type);
     this.updateParentsDocIds(model, newDocId);
     model.setField('id', newDocId);
-    return this.dm.db.save(model.type, model.getResource());
+    return this.mediator.db.save(model.type, model.getDoc(), false);
   }
 
-  private updateParentsDocIds(model: ResourceModel, newDocId: number) {
+  private updateParentsDocIds(model: DocModel, newDocId: number) {
     const { type, id } = model;
-    const relationsToModels = this.dm.rdm.getCacheOf(RelationDataManager.CHILD_TO_PARENT_CACHE, type, id);
+    // const relationsToModels = this.mediator.rdm.getRelationsFor(type, id);
+    const relationsToModels = this.mediator.getDependentRelations(type, id);
     for(const relationName in relationsToModels) {
       const model = relationsToModels[relationName];
-      const descriptor: RelationDescriptor = this.dm.rdm.getRelationDescriptor(model, relationName);
-      if (descriptor.relationType === RelationDataManager.RELATION_TYPE_BELONGS_TO) {
+      const descriptor: RelationDescriptor = this.mediator.getRelationDescriptor(model, relationName);
+      if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
         descriptor.parent.setField(relationName, newDocId);
-      } else if (descriptor.relationType === RelationDataManager.RELATION_TYPE_HAS_MANY) {
+      } else if (descriptor.relationType === RelationManager.RELATION_TYPE_HAS_MANY) {
         const oldIds = model.getField(relationName);
         const indexOfOldId = oldIds.indexOf(id);
         oldIds[indexOfOldId] = newDocId;
@@ -132,15 +132,15 @@ export class PersistenceManager {
 
   private getModelFromResponse(response: any) {
     let id, type;
-    if (response instanceof ResourceModel) {
+    if (response instanceof DocModel) {
       id = response.id;
       type = response.type;
     } else {
-      const parsedDocID: ParsedDocId = this.dm.db.parseDocID(response.id);
-      const typeSchema: TypeSchema = this.dm.getTypeSchema(parsedDocID.type);
+      const parsedDocID: ParsedDocId = this.mediator.db.parseDocID(response.id);
+      const typeSchema: TypeSchema = this.mediator.getTypeSchema(parsedDocID.type);
       id = parsedDocID.id;
       type = typeSchema.plural;
     }
-    return this.dm.sideloadedModelData.getResourceModelByTypeAndId(type,id);
+    return this.mediator.ranks.getDocModelByTypeAndId(type,id);
   }
 }

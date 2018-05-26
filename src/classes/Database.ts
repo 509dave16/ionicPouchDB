@@ -2,40 +2,40 @@ import PouchDB from 'pouchdb';
 import TypeSchema = RanksORM.TypeSchema;
 import RelationalDatabase = RanksORM.RelationalDatabase;
 import FindOptions = RanksORM.FindOptions;
-import {SideloadedDataManager} from "./SideloadedDataManager";
+import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
 import SideloadedData = RanksORM.SideloadedData;
-import RootResourceDescriptor = RanksORM.RootResourceDescriptor;
+import RootDocDescriptor = RanksORM.RootDocDescriptor;
 import ParsedDocId = RanksORM.ParsedDocId;
-import MaxDocIdCache = RanksORM.MaxDocIdCache;
-import {ResourceModel} from "./ResourceModel";
-import {ResourceCollection} from "./ResourceCollection";
-
-export interface ResourceQuery {
-  (): Promise<ResourceModel|ResourceCollection>;
-}
+import {DocModel} from "./DocModel";
+import {DocCollection} from "./DocCollection";
+import {Schema} from "./Schema";
+import {DocIdCache} from "./DocIdCache";
+import DocQuery = RanksORM.DocQuery;
 
 export class Database {
-  private schema: TypeSchema[];
+  public schema: Schema;
   private localName: string;
   private remoteName: string;
   private db: RelationalDatabase;
-  private maxDocIdCache: MaxDocIdCache = {};
+  public docIdCache: DocIdCache;
 
-  constructor(schema: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
-    this.schema = schema;
+  constructor(typeSchemas: TypeSchema[], localName: string = 'relational-db', remoteName: string = '') {
+    this.schema = new Schema(typeSchemas);
     this.localName = localName;
     this.remoteName = remoteName;
   }
 
   init (): Promise<any> {
     this.setupReplication();
-    return this.initializeMaxDocIdCache();
+    this.docIdCache = new DocIdCache(this);
+    return this.docIdCache.initializeDocIdCache();
   }
 
   setupReplication() {
     this.db = new PouchDB(this.localName);
-    this.db.setSchema(this.schema);
+    this.db.setSchema(this.schema.getTypeSchemas());
+
     const remoteDB: PouchDB.Database = new PouchDB(this.remoteName);
 
     let options = {
@@ -67,16 +67,16 @@ export class Database {
     this.db.replicate.from(remoteDB, options);
   }
 
-  async save(type: string, object: any): Promise<ResourceModel> {
+  async save(type: string, object: any, retry: boolean = true): Promise<DocModel> {
     let writeCompleted = false;
     let promise = null;
-    let descriptor: RootResourceDescriptor = null;
+    let descriptor: RootDocDescriptor = null;
     while (!writeCompleted) {
       try {
         if (object.id === undefined) {
-          object.id = this.getNextMaxDocId(type);
+          object.id = this.docIdCache.getNextDocId(type);
         }
-        const query: ResourceQuery = () => this.findById(type, object.id);
+        const query: DocQuery = () => this.findById(type, object.id);
         descriptor = { type, ids: [object.id], plurality: 'model', query};
         const data: SideloadedData = await this.db.rel.save(type, object);
         promise = Promise.resolve(data);
@@ -91,37 +91,37 @@ export class Database {
         }
       }
     }
-    return this.wrapWithResourceModel(descriptor, promise);
+    return this.wrapWithDocModel(descriptor, promise);
   }
 
-  findAll(type: string): Promise<ResourceCollection> {
-    const query: ResourceQuery = () => this.db.rel.find(type);
-    const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithResourceCollection(descriptor, query());
+  findAll(type: string): Promise<DocCollection> {
+    const query: DocQuery = () => this.db.rel.find(type);
+    const descriptor: RootDocDescriptor = { type, ids: null, plurality: 'collection', query};
+    return this.wrapWithDocCollection(descriptor, query());
   }
 
-  findById(type: string, id: number): Promise<ResourceModel> {
-    const query: ResourceQuery = () => this.db.rel.find(type, id);
-    const descriptor: RootResourceDescriptor = { type, ids: [id], plurality: 'model', query};
-    return this.wrapWithResourceModel(descriptor, query());
+  findById(type: string, id: number): Promise<DocModel> {
+    const query: DocQuery = () => this.db.rel.find(type, id);
+    const descriptor: RootDocDescriptor = { type, ids: [id], plurality: 'model', query};
+    return this.wrapWithDocModel(descriptor, query());
   }
 
-  findByIds(type: string, ids: number[]): Promise<ResourceCollection> {
+  findByIds(type: string, ids: number[]): Promise<DocCollection> {
     const query = () => this.db.rel.find(type, ids);
-    const descriptor: RootResourceDescriptor = { type, ids, plurality: 'collection', query};
-    return this.wrapWithResourceCollection(descriptor, query());
+    const descriptor: RootDocDescriptor = { type, ids, plurality: 'collection', query};
+    return this.wrapWithDocCollection(descriptor, query());
   }
 
   // Update this later if we need to include options in the query object
-  findByOptions(type: string, options: FindOptions): Promise<ResourceCollection> {
-    const query: ResourceQuery = () => this.db.rel.find(type, options);
-    const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithResourceCollection(descriptor, query());
+  findByOptions(type: string, options: FindOptions): Promise<DocCollection> {
+    const query: DocQuery = () => this.db.rel.find(type, options);
+    const descriptor: RootDocDescriptor = { type, ids: null, plurality: 'collection', query};
+    return this.wrapWithDocCollection(descriptor, query());
   }
-  findHasMany(type: string, belongsToKey: string, belongsToId: number): Promise<ResourceCollection> {
-    const query: ResourceQuery = () => this.db.rel.findHasMany(type, belongsToKey, belongsToId);
-    const descriptor: RootResourceDescriptor = { type, ids: null, plurality: 'collection', query};
-    return this.wrapWithResourceCollection(descriptor, query());
+  findHasMany(type: string, belongsToKey: string, belongsToId: number): Promise<DocCollection> {
+    const query: DocQuery = () => this.db.rel.findHasMany(type, belongsToKey, belongsToId);
+    const descriptor: RootDocDescriptor = { type, ids: null, plurality: 'collection', query};
+    return this.wrapWithDocCollection(descriptor, query());
   }
   delete(type: string, object: any): Promise<any> {
     return this.db.rel.del(type, object);
@@ -135,20 +135,20 @@ export class Database {
     return this.db.rel.getAttachment(type, id, attachmentId)
   }
 
-  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<ResourceModel> {
+  putAttachment(type: string, object: any, attachmentId: string, attachment: any, attachmentType: string): Promise<DocModel> {
     const ids = [object.id];
     const plurality = 'model';
     const query = () => this.db.rel.find(type, object.id);
-    const descriptor: RootResourceDescriptor = { type, ids, plurality, query };
-    return this.wrapWithResourceModel(descriptor,this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType));
+    const descriptor: RootDocDescriptor = { type, ids, plurality, query };
+    return this.wrapWithDocModel(descriptor, this.db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType));
   }
 
-  removeAttachment(type: string, object: any, attachmentId: string): Promise<ResourceModel> {
+  removeAttachment(type: string, object: any, attachmentId: string): Promise<DocModel> {
     const ids = [object.id];
     const query = () => this.findById(type, object.id);
     const plurality = 'model';
-    const descriptor: RootResourceDescriptor = { type, ids, plurality, query };
-    return this.wrapWithResourceModel(descriptor, this.db.rel.removeAttachment(type, object, attachmentId));
+    const descriptor: RootDocDescriptor = { type, ids, plurality, query };
+    return this.wrapWithDocModel(descriptor, this.db.rel.removeAttachment(type, object, attachmentId));
   }
 
   parseDocID(docID: string): ParsedDocId {
@@ -159,64 +159,35 @@ export class Database {
     return this.db.rel.makeDocID(parsedDocID);
   }
 
-  parseRelDocs(rootResourceDescriptor, pouchDocs: any): Promise<ResourceCollection> {
-    return this.wrapWithResourceCollection(rootResourceDescriptor, this.db.rel.parseRelDocs(rootResourceDescriptor.type, pouchDocs));
+  parseRelDocs(RootDocDescriptor, pouchDocs: any): Promise<DocCollection> {
+    return this.wrapWithDocCollection(RootDocDescriptor, this.db.rel.parseRelDocs(RootDocDescriptor.type, pouchDocs));
   }
 
   bulkDocs(docs: any[]): Promise<any> {
     return this.db.bulkDocs(docs);
   }
 
-  setSchema(schema: TypeSchema[]): void {
-    this.schema = schema;
-    this.db.setSchema(schema);
+  allDocs(options): Promise<any> {
+    return this.db.allDocs(options);
   }
 
-  getSchema() {
-    return this.schema;
-  }
-
-  private async wrapWithResourceModel(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceModel> {
-    const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
-    return dm.getModelRoot();
-  }
-
-  private async wrapWithResourceCollection(descriptor: RootResourceDescriptor, promise: Promise<any>): Promise<ResourceCollection> {
-    const data: SideloadedData = await promise;
-    const dm: SideloadedDataManager = new SideloadedDataManager(descriptor, data, this);
-    return dm.getCollectionRoot();
-  }
-
-  public initializeMaxDocIdCache(): Promise<any> {
-    return Promise.all(this.schema.map((schema) => this.setMaxDocId(schema)));
-  }
-
-  private async setMaxDocId(schema: TypeSchema): Promise<any> {
-    const results = await this.db.allDocs({
-      endkey: schema.singular,
-      startkey: `${schema.singular}\ufff0`,
-      limit: 1,
-      descending: true
+  async deleteAllDocs(): Promise<any> {
+    const allDocs = await this.db.allDocs({include_docs: true});
+    const deleteDocs = allDocs.rows.map(row => {
+      return {_id: row.id, _rev: row.doc._rev, _deleted: true};
     });
-    if (results.rows.length) {
-      const newDocId = this.parseDocID(results.rows[0].id).id;
-      const currentDocId = this.getNextMaxDocId(schema.plural);
-      this.maxDocIdCache[schema.plural] = newDocId > currentDocId ? newDocId : currentDocId;
-    } else {
-      this.maxDocIdCache[schema.plural] = 0;
-    }
-    return true;
+    return this.db.bulkDocs(deleteDocs);
   }
 
-  public getNextMaxDocId(type: string): number {
-    if(this.schema[type]) {
-      throw new Error(`schema ${type} does not exist.`);
-    }
-    if (this.maxDocIdCache[type] === undefined) {
-      this.maxDocIdCache[type] = 0;
-    }
-    this.maxDocIdCache[type] = ++this.maxDocIdCache[type];
-    return this.maxDocIdCache[type];
+  private async wrapWithDocModel(descriptor: RanksORM.RootDocDescriptor, promise: Promise<any>): Promise<DocModel> {
+    const data: SideloadedData = await promise;
+    const mediator: RanksMediator = new RanksMediator(descriptor, data, this);
+    return mediator.getModelRoot();
+  }
+
+  private async wrapWithDocCollection(descriptor: RanksORM.RootDocDescriptor, promise: Promise<any>): Promise<DocCollection> {
+    const data: SideloadedData = await promise;
+    const mediator: RanksMediator = new RanksMediator(descriptor, data, this);
+    return mediator.getCollectionRoot();
   }
 }

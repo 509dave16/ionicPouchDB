@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import {AlertController, IonicPage, LoadingController, NavController, NavParams} from 'ionic-angular';
 import {RelationalService} from "../../services/relational.service";
-import {ResourceModel} from "../../classes/ResourceModel";
-import {ResourceCollection} from "../../classes/ResourceCollection";
+import {DocModel} from "../../classes/DocModel";
+import {DocCollection} from "../../classes/DocCollection";
 
 /**
  * Generated class for the RelationalPage page.
@@ -17,8 +17,8 @@ import {ResourceCollection} from "../../classes/ResourceCollection";
   templateUrl: 'relational.html',
 })
 export class RelationalPage {
-  authors: ResourceModel[] = [];
-  books: ResourceCollection;
+  authors: DocModel[] = [];
+  books: DocCollection;
   bookTitle: string;
   authorId: string;
   detachAuthorId: string;
@@ -36,13 +36,13 @@ export class RelationalPage {
 
   async init() {
     await this.relationalService.troubleshoot();
-    const author: ResourceModel = await this.relationalService.seedTestData();
+    const author: DocModel = await this.relationalService.seedTestData();
     this.initializeData(author);
   }
 
-  async initializeData(author: ResourceModel) {
+  async initializeData(author: DocModel) {
     this.authors = [author];
-    this.books = author.get('books') as ResourceCollection;
+    this.books = author.get('books') as DocCollection;
   }
 
   ionViewDidLoad() {
@@ -64,10 +64,17 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Creating Book for Author'});
     loading.present();
-    const author: ResourceModel = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
+    const author: DocModel = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
     this.initializeData(author);
     this.bookTitle = '';
     this.authorId = '';
+    loading.dismiss();
+  }
+
+  async removeAllData() {
+    const loading = this.loadCtrl.create({ content: 'Removing all docs'});
+    loading.present();
+    await this.relationalService.removeAllData();
     loading.dismiss();
   }
 
@@ -86,7 +93,7 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Removing Book from Author'});
     loading.present();
-    const author: ResourceModel = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
+    const author: DocModel = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
     this.initializeData(author);
     this.detachBookId = '';
     this.detachAuthorId = '';
@@ -107,7 +114,7 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Adding Author'});
     loading.present();
-    const author: ResourceModel = await this.relationalService.createAuthor(this.newAuthorId);
+    const author: DocModel = await this.relationalService.createAuthor(this.newAuthorId);
     this.newAuthorId = '';
     loading.dismiss();
   }
