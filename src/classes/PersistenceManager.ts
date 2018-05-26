@@ -1,3 +1,12 @@
+/**
+ * There are 3 different ways that we can currently save docs
+ * 1. Save only the Root Model or Collection
+ * 2. Save all Related Models in addition to the Root Model or Collection one at a time
+ * 3. 2. But in bulk
+ *
+ * We have some logic in here for updating Models ids. This should be moved to the specific cache implementation that is affects
+ */
+
 import {ResourceCollection} from "./ResourceCollection";
 import {ResourceModel} from "./ResourceModel";
 import {SideloadedDataManager} from "./SideloadedDataManager";

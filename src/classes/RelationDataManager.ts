@@ -1,3 +1,15 @@
+/**
+ * parentToChildCache - This is intended for fetching/attaching/detaching relations of a root model
+ * childToParentCache - This is intended for understanding what models are dependents
+ * We should write an abstraction to separate these two types of caches. It will technically mean more operations are performed.
+ * As well as some duplicated code. But in the end it will be better so that we won't have errors introduced by leaving a cache
+ * hanging around if we really don't want to use it. As far as I can tell we could have a base class that calls hooks
+ * implemented in the child classes.
+ * addToRelation, removeFromRelation, cacheModelRelations all have conditional syntax for handling belongsTo or hasMany
+ * we can create hooks for those methods in each child Class that will handle that. That way we can separate out
+ * these two data structures. Making it easy to use or not to use one or the other
+ */
+
 import {SideloadedDataManager} from "./SideloadedDataManager";
 import {ResourceModel} from "./ResourceModel";
 import {ResourceCollection} from "./ResourceCollection";
