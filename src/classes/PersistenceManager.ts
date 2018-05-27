@@ -16,7 +16,7 @@ import ParsedDocId = RanksORM.ParsedDocId;
 import TypeSchema = RanksORM.TypeSchema;
 import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
 import {RelationManager} from "./RelationManager";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import RelationDescriptor = RanksORM.DocRelationDescriptor;
 
 export class PersistenceManager {
   private mediator: RanksMediator;
@@ -119,9 +119,9 @@ export class PersistenceManager {
     const relationsToModels = this.mediator.getDependentRelations(type, id);
     for(const relationName in relationsToModels) {
       const model = relationsToModels[relationName];
-      const descriptor: RelationDescriptor = this.mediator.getRelationDescriptor(model, relationName);
+      const descriptor: RelationDescriptor = this.mediator.getDocRelationDescriptor(model, relationName);
       if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
-        descriptor.parent.setField(relationName, newDocId);
+        descriptor.from.setField(relationName, newDocId);
       } else if (descriptor.relationType === RelationManager.RELATION_TYPE_HAS_MANY) {
         const oldIds = model.getField(relationName);
         const indexOfOldId = oldIds.indexOf(id);

@@ -2,6 +2,7 @@ import {DocModel} from "../classes/DocModel";
 import t from 'tcomb';
 import {DocCollection} from "../classes/DocCollection";
 import {DataRelations} from "../classes/DataRelations";
+import {DataRelationsNamespace} from "./DataRelations.namespace";
 
 export namespace RanksORM {
   export interface SideloadedData {
@@ -21,10 +22,6 @@ export namespace RanksORM {
     type: string;
   }
 
-  export interface DataDescriptorCollection {
-
-  }
-
   export interface DocQuery {
     (): Promise<DocModel|DocCollection>;
   }
@@ -36,12 +33,11 @@ export namespace RanksORM {
     query: DocQuery;
   }
 
-  export interface RelationDescriptor {
+  export interface DocRelationDescriptor extends DataRelationsNamespace.DataRelationDescriptor {
     relationType: string;
-    relationDocType: string;
+    relationToType: string;
     relationName: string;
-    parent: DocModel;
-    parentDocType: string;
+    from: DocModel;
   }
 
   export interface Relations {

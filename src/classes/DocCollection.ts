@@ -1,7 +1,7 @@
 import {DocModel} from "./DocModel";
 import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
 import DataDescriptorCollection = RanksORM.DataDescriptorCollection;
 
@@ -20,14 +20,14 @@ export class DocCollection implements DataDescriptorCollection{
   }
 
   add(modelOrDoc: DocModel|any, inverseRelation?:string ): DocCollection {
-    const { parent, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(parent, relationName, modelOrDoc, inverseRelation);
+    const { from, relationName } = this.relationDesc;
+    this.dataManager.attachToRelation(from, relationName, modelOrDoc, inverseRelation);
     return this;
   }
 
   remove(modelOrId: DocModel|number, inverseRelation?: string): DocCollection {
-    const { parent, relationName } = this.relationDesc;
-    this.dataManager.detachFromRelation(parent, relationName, modelOrId, inverseRelation);
+    const { from, relationName } = this.relationDesc;
+    this.dataManager.detachFromRelation(from, relationName, modelOrId, inverseRelation);
     return this;
   }
 

@@ -12,7 +12,10 @@ import {RelationManager} from "./RelationManager";
 import {PersistenceManager} from "./PersistenceManager";
 import {ParentDocRelations} from "./ParentDocRelations";
 import {DependentDocRelations} from "./DependentDocRelations";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
+import {DataRelationsNamespace} from "../namespaces/DataRelations.namespace";
+import DataDescriptor = DataRelationsNamespace.DataDescriptor;
+import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 
 export class RanksMediator {
   private static readonly PLURALITY_MANY = 'collection';
@@ -41,7 +44,7 @@ export class RanksMediator {
 
   public getRelation(parent: DocModel, relationName: string): DocModel|DocCollection {
     const { type, id } = parent;
-    const descriptor: RelationDescriptor = this.getRelationDescriptor(parent, relationName);
+    const descriptor: DocRelationDescriptor = this.getDocRelationDescriptor(parent, relationName);
     this.db.schema.errorIfRelationDoesntExist(type, relationName);
     const value: any = this.parentRelations.getRelation(type, id, relationName);
     if (value instanceof Array) {
@@ -55,9 +58,9 @@ export class RanksMediator {
   }
 
   public attachToRelation(parentModel: DocModel, relationName: string, modelOrDoc: DocModel|any, inverseRelation: string) {
-    const descriptor = this.getRelationDescriptor(parentModel, relationName);
-    const childModel: DocModel = this.newDocModel(modelOrDoc, descriptor.relationDocType);
-    const docModel: DocModel = this.ranks.getDocModelByTypeAndId(descriptor.relationDocType, childModel.id);
+    const descriptor = this.getDocRelationDescriptor(parentModel, relationName);
+    const childModel: DocModel = this.newDocModel(modelOrDoc, descriptor.relationToType);
+    const docModel: DocModel = this.ranks.getDocModelByTypeAndId(descriptor.relationToType, childModel.id);
     if (!docModel) { this.ranks.getRankByType(childModel.type).push(childModel); }
     this.db.schema.errorIfRelationDoesntExist(parentModel.type, relationName);
     this.parentRelations.attachToRelation(parentModel, relationName, childModel,inverseRelation);
@@ -139,11 +142,25 @@ export class RanksMediator {
     return this.ranks.getDocModelByTypeAndId(this.rootDocDescriptor.type, this.rootDocDescriptor.ids[0]);
   }
 
-  public getRelationDescriptor(model: DocModel, relationName): RelationDescriptor {
-    return this.db.schema.getRelationDescriptor(model, relationName);
+  public getDocRelationDescriptor(model: DocModel, relationName): DocRelationDescriptor {
+    return this.getRelationDescriptor(model, relationName) as DocRelationDescriptor;
   }
 
-  public getInverseDescriptor(parentDescriptor: RelationDescriptor, childModel: DocModel, relationName: string = ''): RelationDescriptor {
-    return this.db.schema.getInverseDescriptor(parentDescriptor, childModel, relationName);
+  public getRelationDescriptor(dataDescriptor: DataDescriptor, relationName: string): DataRelationDescriptor {
+    return this.db.schema.getRelationDescriptor(dataDescriptor, relationName);
   }
+
+  public getInverseDocRelationDescriptor(parentDescriptor: DocRelationDescriptor, childModel: DocModel, relationName: string = ''): DocRelationDescriptor {
+    return this.db.schema.getInverseRelationDescriptor(parentDescriptor, childModel, relationName) as DocRelationDescriptor;
+  }
+
+  public getInverseRelationDescriptor(parentRelationDescriptor: DataRelationDescriptor, childDataDescriptor: DataDescriptor, relationName: string = ''): DataDescriptor {
+    return this.db.schema.getInverseRelationDescriptor(parentRelationDescriptor, childDataDescriptor, relationName);
+  }
+
+  public getRelatedData() {
+    return this.ranks.getRanks();
+  }
+
+  public getRelationData()
 }

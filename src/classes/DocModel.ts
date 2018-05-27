@@ -1,7 +1,7 @@
 import {objectClone, objectEqual} from "../utils/object.util";
 import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import TypeSchema = RanksORM.TypeSchema;
 import SaveOptions = RanksORM.SaveOptions;
 import t from 'tcomb';
@@ -29,6 +29,8 @@ export class DocModel implements DataDescriptor {
   setRelationDescriptor(relationDesc: RelationDescriptor) {
     this.relationDesc = relationDesc;
   }
+
+  get[]
 
   get id(): number {
     return this.doc.id;
@@ -158,7 +160,7 @@ export class DocModel implements DataDescriptor {
     // 2. Make a relational pouch id
     const parsedDocID: ParsedDocId = { type: this.type, id: this.id};
     const rpId: string = this.mediator.db.makeDocID(parsedDocID);
-    // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _id/_rev
+    // 3. Remove unwanted id/rev in favor of Pouch/Couch spec of _sid/_rev
     const blacklistedKeys = ['_id'];
     clonedDoc._id = rpId;
     delete clonedDoc.id;

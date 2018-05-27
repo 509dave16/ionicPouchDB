@@ -3,9 +3,12 @@ import {throwErrorIfUndefined} from "../utils/error.util";
 import {RanksMediator} from "./RanksMediator";
 import {DocModel} from "./DocModel";
 import {RanksORM} from "../namespaces/RanksORM.namespace";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import {DataRelations} from "./DataRelations";
 import RelationsConstructor = RanksORM.DataRelationsConstructor;
+import {DataRelationsNamespace} from "../namespaces/DataRelations.namespace";
+import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
+import DataDescriptor = DataRelationsNamespace.DataDescriptor;
 
 export class RelationManager {
   public static readonly RELATION_TYPE_HAS_MANY = 'hasMany';
@@ -24,23 +27,24 @@ export class RelationManager {
   }
 
   private setRelations() {
-    const data: any = this.mediator.ranks.getRanks();
-    Object.keys(data).forEach(type => data[type].forEach( (model: DocModel) => this.setModelRelations(model) ) );
+    const data: any = this.mediator.getRelatedData();
+    Object.keys(data).forEach(type => data[type].forEach( (model: DocModel) => this.setDataDescriptorRelations(model) ) );
   }
 
-  private setModelRelations(fromModel: DocModel) {
-    throwErrorIfUndefined(fromModel, 'fromModel');
-    const schema = this.mediator.getTypeSchema(fromModel.type);
+  private setDataDescriptorRelations(from: DataDescriptor) {
+    throwErrorIfUndefined(from, 'parentDataDescriptor');
+    const schema = this.mediator.getTypeSchema(from.type);
     for (const relationName of Object.keys(schema.relations)) {
-      const descriptor: RelationDescriptor = this.mediator.getRelationDescriptor(fromModel, relationName);
+      const descriptor: DataRelationDescriptor = this.mediator.getRelationDescriptor(from, relationName);
       if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
-        const toModel: DocModel = this.mediator.ranks.getDocModelByTypeAndId(descriptor.relationDocType, fromModel.getField(relationName));
+        const toModel: DocModel = this.mediator.ranks.getDocModelByTypeAndId(descriptor.relationToType, from.getField(relationName));
         if (!toModel) return;
-        toModel.setRelationDescriptor(descriptor);
-        this.relations.setBelongsTo(fromModel, relationName, toModel)
+        // TODO: Don't need a parent relation descriptor on the child. But if it at some point we do. We will need to support many of them.
+        // toModel.setRelationDescriptor(descriptor);
+        this.relations.setBelongsTo(parentDataDescriptor, relationName, toModel)
       } else if (descriptor.relationType === RelationManager.RELATION_TYPE_HAS_MANY) {
-        const toModels: DocModel[] = this.mediator.ranks.getDocModelsByTypeAndIds(descriptor.relationDocType, fromModel.getField(relationName));
-        this.relations.setHasMany(fromModel, relationName, toModels);
+        const toModels: DocModel[] = this.mediator.ranks.getDocModelsByTypeAndIds(descriptor.relationToType, fromModel.getField(relationName));
+        this.relations.setHasMany(parentDataDescriptor, relationName, toModels);
       }
     }
   }
@@ -50,14 +54,14 @@ export class RelationManager {
   public attachToRelation(parentModel: DocModel, relationName: string, childModel: DocModel, inverseRelationName: any = '') {
     throwErrorIfUndefined(parentModel, 'parent model');
     throwErrorIfUndefined(childModel, 'child model');
-    const descriptor = this.mediator.getRelationDescriptor(parentModel, relationName);
-    const inverseDescriptor: RelationDescriptor = inverseRelationName === false ? null : this.mediator.getInverseDescriptor(descriptor, childModel, inverseRelationName);
+    const descriptor = this.mediator.getDocRelationDescriptor(parentModel, relationName);
+    const inverseDescriptor: RelationDescriptor = inverseRelationName === false ? null : this.mediator.getInverseDocRelationDescriptor(descriptor, childModel, inverseRelationName);
     if (inverseDescriptor) { this.addToRelation(inverseDescriptor, parentModel); }
     this.addToRelation(descriptor, childModel);
   }
 
   public addToRelation(descriptor: RelationDescriptor, childModel: DocModel) {
-    const parentModel: DocModel = descriptor.parent;
+    const parentModel: DocModel = descriptor.from;
     const relationName: string = descriptor.relationName;
     if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, childModel.id);
@@ -69,21 +73,21 @@ export class RelationManager {
 
   public detachFromRelation(parentModel: DocModel, relationName: string, childModelOrId: DocModel|number, inverseRelationName: any = '') {
     throwErrorIfUndefined(parentModel, 'parent model');
-    const descriptor: RelationDescriptor = this.mediator.getRelationDescriptor(parentModel, relationName);
+    const descriptor: RelationDescriptor = this.mediator.getDocRelationDescriptor(parentModel, relationName);
     let childModel: DocModel;
     if (this.mediator.isModel(childModelOrId)) {
       childModel = childModelOrId as DocModel;
     } else{
-      childModel = this.mediator.ranks.getDocModelByTypeAndId(descriptor.relationDocType, childModelOrId as number);
+      childModel = this.mediator.ranks.getDocModelByTypeAndId(descriptor.relationToType, childModelOrId as number);
     }
     throwErrorIfUndefined(childModel, 'child model');
-    const inverseDescriptor = inverseRelationName === false ? null : this.mediator.getInverseDescriptor(descriptor, childModel);
+    const inverseDescriptor = inverseRelationName === false ? null : this.mediator.getInverseDocRelationDescriptor(descriptor, childModel);
     if (inverseDescriptor) { this.removeFromRelation(inverseDescriptor, parentModel) }
     this.removeFromRelation(descriptor, childModel);
   }
 
   public removeFromRelation(descriptor: RelationDescriptor, childModel: DocModel) {
-    const parentModel: DocModel = descriptor.parent;
+    const parentModel: DocModel = descriptor.from;
     const relationName: string = descriptor.relationName;
     if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
       parentModel.setField(relationName, null);
