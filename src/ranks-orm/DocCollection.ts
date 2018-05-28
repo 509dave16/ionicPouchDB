@@ -1,15 +1,14 @@
 import {DocModel} from "./DocModel";
 import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "./RanksORM.namespace";
-import RelationDescriptor = RanksORM.DocRelationDescriptor;
+import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
-import DataDescriptorCollection = RanksORM.DataDescriptorCollection;
 
-export class DocCollection implements DataDescriptorCollection{
+export class DocCollection {
   private dataManager: RanksMediator;
-  private readonly  relationDesc: RelationDescriptor;
+  private readonly  relationDesc: DocRelationDescriptor;
   private readonly models: DocModel[];
-  constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: RanksMediator) {
+  constructor(models: any[], relationDesc: DocRelationDescriptor,  dataManager: RanksMediator) {
     this.models = models;
     this.relationDesc = relationDesc;
     this.dataManager = dataManager;

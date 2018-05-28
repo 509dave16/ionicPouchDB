@@ -1,14 +1,53 @@
 import {objectClone, objectEqual} from "../utils/object.util";
 import {RanksMediator} from "./RanksMediator";
 import {RanksORM} from "./RanksORM.namespace";
-import RelationDescriptor = RanksORM.DocRelationDescriptor;
+import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
 import TypeSchema = RanksORM.TypeSchema;
 import SaveOptions = RanksORM.SaveOptions;
 import t from 'tcomb';
 import _ from 'lodash';
 import ParsedDocId = RanksORM.ParsedDocId;
-import DataDescriptor = RanksORM.DataDescriptor;
+import DataDescriptor = DataRelationsNamespace.DataDescriptor;
+import {DataRelationsNamespace} from "./DataRelations.namespace";
 
+function ModelProxy<T extends { new(...args: any[]): {} }>(): any {
+  type Constructor = new (...args: any[]) => T;
+  return (target: T): Constructor => {
+    // Save a reference to the original constructor
+    const DocModelConstructor = target;
+    // the new constructor behaviour
+    const DecoratedDocModelConstructor: any = function (...args: any[]): T {
+      DocModelConstructor.apply(this, args);
+      const blacklistedProps = ['then', 'catch'];
+      var handler = {
+        get: function(obj, prop) {
+            if (prop in obj) {
+              return obj[prop];
+            } else if(blacklistedProps.indexOf(prop) === -1) {
+              return  obj.getField(prop);
+            } else {
+              return;
+            }
+        },
+        set: function (obj, prop, value) {
+          return prop in obj ?
+            obj[prop] = value :
+            obj.setField(prop, value);
+        }
+      };
+      return new Proxy(this, handler) as T;
+    };
+    // Copy prototype so intanceof operator still works
+    DecoratedDocModelConstructor.prototype = DocModelConstructor.prototype;
+    // Copy static members too
+    Object.keys(DocModelConstructor).forEach((name: string) => { DecoratedDocModelConstructor[name] = (<any>DocModelConstructor)[name]; });
+
+    // Return new constructor (will override original)
+    return DecoratedDocModelConstructor;
+  };
+}
+
+@ModelProxy()
 export class DocModel implements DataDescriptor {
   private doc: any;
   private originalDoc: any;
@@ -16,7 +55,7 @@ export class DocModel implements DataDescriptor {
   private mediator: RanksMediator;
   private typeSchema: TypeSchema;
 
-  private relationDesc: RelationDescriptor;
+  private relationDesc: DocRelationDescriptor;
   constructor(doc: any, type: string, mediator: RanksMediator) {
     this.errorOnInvalid();
     this.type = type;
@@ -26,16 +65,12 @@ export class DocModel implements DataDescriptor {
     this.doc = objectClone(doc);
   }
 
-  setRelationDescriptor(relationDesc: RelationDescriptor) {
+  setRelationDescriptor(relationDesc: DocRelationDescriptor) {
     this.relationDesc = relationDesc;
   }
 
   get id(): number {
     return this.doc.id;
-  }
-
-  get relationDescriptor(): RelationDescriptor {
-    return this.relationDesc;
   }
 
   getDoc(): any {
@@ -69,7 +104,10 @@ export class DocModel implements DataDescriptor {
   }
 
   getField(field: string): any {
-    this.errorOnFieldNotExist(field);
+    if (!this.hasField(field)) {
+      console.log(`${field} does not exist on DocModel`);
+      return;
+    }
     if (this.doc[field] === undefined) {
       return this.doc[field] = this.typeSchema.props[field].default();
     }

@@ -90,7 +90,7 @@ export class PersistenceManager {
       }
       const newResponse = await this.retrySavingNewDoc(response);
       return this.handleResponse(newResponse, 0);
-    } else if(response.ok || response instanceof  DocModel) {
+    } else if(response.ok || response.type !== undefined) {
       this.updateDocModelRev(response);
     } else {
       console.error(response);
@@ -115,7 +115,6 @@ export class PersistenceManager {
 
   private updateParentsDocIds(model: DocModel, newDocId: number) {
     const { type, id } = model;
-    // const relationsToModels = this.mediator.rdm.getRelationsFor(type, id);
     const relationsToModels = this.mediator.getDependentRelations(type, id);
     for(const relationName in relationsToModels) {
       const model = relationsToModels[relationName];
