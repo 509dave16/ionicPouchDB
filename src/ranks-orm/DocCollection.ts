@@ -1,15 +1,14 @@
 import {DocModel} from "./DocModel";
 import {RanksMediator} from "./RanksMediator";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import {RanksORM} from "./RanksORM.namespace";
+import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
-import DataDescriptorCollection = RanksORM.DataDescriptorCollection;
 
-export class DocCollection implements DataDescriptorCollection{
+export class DocCollection {
   private dataManager: RanksMediator;
-  private readonly  relationDesc: RelationDescriptor;
+  private readonly  relationDesc: DocRelationDescriptor;
   private readonly models: DocModel[];
-  constructor(models: any[], relationDesc: RelationDescriptor,  dataManager: RanksMediator) {
+  constructor(models: any[], relationDesc: DocRelationDescriptor,  dataManager: RanksMediator) {
     this.models = models;
     this.relationDesc = relationDesc;
     this.dataManager = dataManager;
@@ -20,14 +19,14 @@ export class DocCollection implements DataDescriptorCollection{
   }
 
   add(modelOrDoc: DocModel|any, inverseRelation?:string ): DocCollection {
-    const { parent, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(parent, relationName, modelOrDoc, inverseRelation);
+    const { from, relationName } = this.relationDesc;
+    this.dataManager.attachToRelation(from, relationName, modelOrDoc, inverseRelation);
     return this;
   }
 
   remove(modelOrId: DocModel|number, inverseRelation?: string): DocCollection {
-    const { parent, relationName } = this.relationDesc;
-    this.dataManager.detachFromRelation(parent, relationName, modelOrId, inverseRelation);
+    const { from, relationName } = this.relationDesc;
+    this.dataManager.detachFromRelation(from, relationName, modelOrId, inverseRelation);
     return this;
   }
 

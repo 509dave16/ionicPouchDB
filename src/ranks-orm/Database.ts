@@ -3,7 +3,7 @@ import TypeSchema = RanksORM.TypeSchema;
 import RelationalDatabase = RanksORM.RelationalDatabase;
 import FindOptions = RanksORM.FindOptions;
 import {RanksMediator} from "./RanksMediator";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import SideloadedData = RanksORM.SideloadedData;
 import RootDocDescriptor = RanksORM.RootDocDescriptor;
 import ParsedDocId = RanksORM.ParsedDocId;

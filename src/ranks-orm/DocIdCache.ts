@@ -1,4 +1,4 @@
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import TypeSchema = RanksORM.TypeSchema;
 import {Database} from "./Database";
 import MaxDocIdCache = RanksORM.MaxDocIdCache;

@@ -1,4 +1,4 @@
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import SideloadedData = RanksORM.SideloadedData;
 import {RanksMediator} from "./RanksMediator";
 import {DocModel} from "./DocModel";
@@ -6,15 +6,29 @@ import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
 
 export class Ranks {
   public sideloadedRankModels: ISideloadedRankModels = {};
-  private  dm: RanksMediator;
+  private  mediator: RanksMediator;
 
-  constructor(sideloadedData: SideloadedData, dm: RanksMediator) {
-    this.dm = dm;
+  constructor(sideloadedData: SideloadedData, mediator: RanksMediator) {
+    this.mediator = mediator;
     this.transformSideloadedData(sideloadedData);
   }
   private transformSideloadedData(sideloadedData: SideloadedData) {
     for (const type of Object.keys(sideloadedData))
-      this.sideloadedRankModels[type] = sideloadedData[type].map(doc => new DocModel(doc, type, this.dm));
+      this.sideloadedRankModels[type] = sideloadedData[type].map(doc => new DocModel(doc, type, this.mediator));
+  }
+
+  public newDocModel(modelOrDoc: DocModel|any, type: string): DocModel {
+    let docModel: DocModel;
+    if (this.mediator.isModel(modelOrDoc)) {
+      docModel = modelOrDoc as DocModel;
+    } else if(modelOrDoc.id !== undefined) {
+      docModel = new DocModel(modelOrDoc, type, this.mediator);
+    } else if(modelOrDoc !== undefined) {
+      const doc: any = modelOrDoc;
+      doc.id = this.mediator.getNextDocId(type);
+      docModel = new DocModel(doc, type, this.mediator)
+    }
+    return docModel;
   }
 
   public getRankByType(type: string): DocModel[] {

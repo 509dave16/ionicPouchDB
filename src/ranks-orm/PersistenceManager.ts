@@ -10,13 +10,13 @@
 import {DocCollection} from "./DocCollection";
 import {DocModel} from "./DocModel";
 import {RanksMediator} from "./RanksMediator";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import SaveOptions = RanksORM.SaveOptions;
 import ParsedDocId = RanksORM.ParsedDocId;
 import TypeSchema = RanksORM.TypeSchema;
 import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
 import {RelationManager} from "./RelationManager";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import RelationDescriptor = RanksORM.DocRelationDescriptor;
 
 export class PersistenceManager {
   private mediator: RanksMediator;
@@ -90,7 +90,7 @@ export class PersistenceManager {
       }
       const newResponse = await this.retrySavingNewDoc(response);
       return this.handleResponse(newResponse, 0);
-    } else if(response.ok || response instanceof  DocModel) {
+    } else if(response.ok || response.type !== undefined) {
       this.updateDocModelRev(response);
     } else {
       console.error(response);
@@ -115,13 +115,12 @@ export class PersistenceManager {
 
   private updateParentsDocIds(model: DocModel, newDocId: number) {
     const { type, id } = model;
-    // const relationsToModels = this.mediator.rdm.getRelationsFor(type, id);
     const relationsToModels = this.mediator.getDependentRelations(type, id);
     for(const relationName in relationsToModels) {
       const model = relationsToModels[relationName];
-      const descriptor: RelationDescriptor = this.mediator.getRelationDescriptor(model, relationName);
+      const descriptor: RelationDescriptor = this.mediator.getDocRelationDescriptor(model, relationName);
       if (descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO) {
-        descriptor.parent.setField(relationName, newDocId);
+        descriptor.from.setField(relationName, newDocId);
       } else if (descriptor.relationType === RelationManager.RELATION_TYPE_HAS_MANY) {
         const oldIds = model.getField(relationName);
         const indexOfOldId = oldIds.indexOf(id);

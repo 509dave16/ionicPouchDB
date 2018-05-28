@@ -1,8 +1,9 @@
 import {RelationManager} from "./RelationManager";
-import {DocModel} from "./DocModel";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
-import RelationDescriptor = RanksORM.RelationDescriptor;
+import {RanksORM} from "./RanksORM.namespace";
 import TypeSchema = RanksORM.TypeSchema;
+import {DataRelationsNamespace} from "./DataRelations.namespace";
+import DataDescriptor = DataRelationsNamespace.DataDescriptor;
+import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 
 export class Schema {
   private typeSchemas: TypeSchema[];
@@ -35,7 +36,7 @@ export class Schema {
    * @param descriptor
    * @returns {string | string}
    */
-  private static getDocType(descriptor) {
+  private static getDataType(descriptor) {
     return descriptor.hasMany || descriptor.belongsTo;
   }
 
@@ -48,19 +49,18 @@ export class Schema {
     }
   }
 
-  public getRelationDescriptor(model: DocModel, relationName): RelationDescriptor {
-    const schema = this.getTypeSchema(model.type);
+  public getRelationDescriptor(dataDescriptor: DataDescriptor, relationName): DataRelationDescriptor {
+    const schema = this.getTypeSchema(dataDescriptor.type);
     const relation = schema.relations[relationName];
     if (relation == undefined) {
-      throw new Error(`Relation '${relationName}' does not exist on doc of ${model.id} in ${model.type}`);
+      throw new Error(`Relation '${relationName}' does not exist on doc of ${dataDescriptor.id} in ${dataDescriptor.type}`);
     }
-    const relationDocType = Schema.getDocType(relation);
+    const relationDocType = Schema.getDataType(relation);
     const relationType = Schema.getRelationType(relation);
     return {
-      parent: model,
-      parentDocType: model.type,
+      from: dataDescriptor,
       relationName,
-      relationDocType: relationDocType,
+      relationToType: relationDocType,
       relationType
     };
   }
@@ -69,7 +69,7 @@ export class Schema {
     const relations = this.getTypeSchema(typeHaystack).relations;
     for(const relationName in relations) {
       const relation = relations[relationName];
-      const type = Schema.getDocType(relation);
+      const type = Schema.getDataType(relation);
       if (type === typeNeedle) {
         return relationName;
       }
@@ -77,13 +77,13 @@ export class Schema {
     return '';
   }
 
-  public getInverseDescriptor(parentDescriptor: RelationDescriptor, childModel: DocModel, relationName: string = ''): RelationDescriptor {
+  public getInverseRelationDescriptor(parentDescriptor: DataRelationDescriptor, childDescriptor: DataDescriptor, relationName: string = ''): DataRelationDescriptor {
     if (!relationName) {
-      relationName = this.getFirstRelationOfType(parentDescriptor.parentDocType, childModel.type);
+      relationName = this.getFirstRelationOfType(parentDescriptor.from.type, childDescriptor.type);
     }
     if (!relationName) {
       return null; // if still empty that means there's no inverse relation. So we exit.
     }
-    return this.getRelationDescriptor(childModel, relationName);
+    return this.getRelationDescriptor(childDescriptor, relationName);
   }
 }
