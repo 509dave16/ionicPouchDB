@@ -13,6 +13,8 @@ import {RelationalPage} from "../pages/relational/relational";
 import PouchDB from 'pouchdb';
 import RelationalPouch from 'relational-pouch';
 import PouchDbFind from 'pouchdb-find';
+import {RxDBService} from "../services/rx-db.service";
+import {RxDbPage} from "../pages/rx-db/rx-db";
 
 @Component({
   templateUrl: 'app.html'
@@ -33,19 +35,20 @@ export class MyApp {
    */
   @ViewChild('rootNavComponent') private rootNavComponent: Nav;
 
-  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService) {
-    this.init(platform, statusBar, splashScreen, superLoginService, todoService, relationalService);
+  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService, rxdbService: RxDBService) {
+    this.init(platform, statusBar, splashScreen, superLoginService, todoService, relationalService, rxdbService);
   }
 
-  private async init(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService) {
+  private async init(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, superLoginService: SuperLoginService, todoService: Todos, relationalService: RelationalService, rxdbService: RxDBService) {
     await platform.ready();
     PouchDB.plugin(RelationalPouch);
     PouchDB.plugin(PouchDbFind);
     if (superLoginService.SuperLoginClient.authenticated()) {
       // todoService.init();
       await relationalService.init();
-      // this.rootNavComponent.setRoot(HomePage, {});
+      // await rxdbService.init();
       this.rootNavComponent.setRoot(RelationalPage, {});
+      // this.rootNavComponent.setRoot(RxDbPage);
     } else {
       this.rootNavComponent.setRoot(LoginPage, {});
     }
