@@ -1,7 +1,7 @@
 import {RelationManager} from "./RelationManager";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import TypeSchema = RanksORM.TypeSchema;
-import {DataRelationsNamespace} from "../namespaces/DataRelations.namespace";
+import {DataRelationsNamespace} from "./DataRelations.namespace";
 import DataDescriptor = DataRelationsNamespace.DataDescriptor;
 import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 

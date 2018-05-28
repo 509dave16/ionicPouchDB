@@ -1,5 +1,5 @@
 import {throwErrorIfUndefined} from "../utils/error.util";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import DataDescriptor = RanksORM.DataDescriptor;
 export abstract class DataRelations {
   protected cache: any;

@@ -1,6 +1,6 @@
 import {DocModel} from "./DocModel";
 import {RanksMediator} from "./RanksMediator";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
 import DataDescriptorCollection = RanksORM.DataDescriptorCollection;

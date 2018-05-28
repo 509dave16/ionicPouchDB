@@ -1,6 +1,6 @@
 import {objectClone, objectEqual} from "../utils/object.util";
 import {RanksMediator} from "./RanksMediator";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import TypeSchema = RanksORM.TypeSchema;
 import SaveOptions = RanksORM.SaveOptions;
@@ -30,10 +30,12 @@ export class DocModel implements DataDescriptor {
     this.relationDesc = relationDesc;
   }
 
-  get[]
-
   get id(): number {
     return this.doc.id;
+  }
+
+  get relationDescriptor(): RelationDescriptor {
+    return this.relationDesc;
   }
 
   getDoc(): any {

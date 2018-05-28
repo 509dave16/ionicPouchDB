@@ -1,7 +1,7 @@
 import {Database} from "./Database";
 import TypeSchema = RanksORM.TypeSchema;
 import RootDocDescriptor = RanksORM.RootDocDescriptor;
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import SideloadedData = RanksORM.SideloadedData;
 import {DocCollection} from "./DocCollection";
 import {DocModel} from "./DocModel";
@@ -13,7 +13,7 @@ import {PersistenceManager} from "./PersistenceManager";
 import {ParentDocRelations} from "./ParentDocRelations";
 import {DependentDocRelations} from "./DependentDocRelations";
 import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
-import {DataRelationsNamespace} from "../namespaces/DataRelations.namespace";
+import {DataRelationsNamespace} from "./DataRelations.namespace";
 import DataDescriptor = DataRelationsNamespace.DataDescriptor;
 import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 

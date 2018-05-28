@@ -2,11 +2,11 @@ import {throwErrorIfUndefined} from "../utils/error.util";
 
 import {RanksMediator} from "./RanksMediator";
 import {DocModel} from "./DocModel";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import RelationDescriptor = RanksORM.DocRelationDescriptor;
 import {DataRelations} from "./DataRelations";
 import RelationsConstructor = RanksORM.DataRelationsConstructor;
-import {DataRelationsNamespace} from "../namespaces/DataRelations.namespace";
+import {DataRelationsNamespace} from "./DataRelations.namespace";
 import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 import DataDescriptor = DataRelationsNamespace.DataDescriptor;
 
@@ -41,10 +41,10 @@ export class RelationManager {
         if (!toModel) return;
         // TODO: Don't need a parent relation descriptor on the child. But if it at some point we do. We will need to support many of them.
         // toModel.setRelationDescriptor(descriptor);
-        this.relations.setBelongsTo(parentDataDescriptor, relationName, toModel)
+        this.relations.setBelongsTo(from, relationName, toModel)
       } else if (descriptor.relationType === RelationManager.RELATION_TYPE_HAS_MANY) {
-        const toModels: DocModel[] = this.mediator.ranks.getDocModelsByTypeAndIds(descriptor.relationToType, fromModel.getField(relationName));
-        this.relations.setHasMany(parentDataDescriptor, relationName, toModels);
+        const toModels: DocModel[] = this.mediator.ranks.getDocModelsByTypeAndIds(descriptor.relationToType, from.getField(relationName));
+        this.relations.setHasMany(from, relationName, toModels);
       }
     }
   }

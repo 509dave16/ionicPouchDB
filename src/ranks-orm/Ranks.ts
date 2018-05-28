@@ -1,4 +1,4 @@
-import {RanksORM} from "../namespaces/RanksORM.namespace";
+import {RanksORM} from "./RanksORM.namespace";
 import SideloadedData = RanksORM.SideloadedData;
 import {RanksMediator} from "./RanksMediator";
 import {DocModel} from "./DocModel";

@@ -1,5 +1,5 @@
-import {DataRelations} from "../classes/DataRelations";
-import {DocModel} from "../classes/DocModel";
+import {DataRelations} from "./DataRelations";
+import {DocModel} from "./DocModel";
 
 export namespace DataRelationsNamespace {
   export interface DataRelationsConstructor {

@@ -1,7 +1,7 @@
-import {DocModel} from "../classes/DocModel";
+import {DocModel} from "./DocModel";
 import t from 'tcomb';
-import {DocCollection} from "../classes/DocCollection";
-import {DataRelations} from "../classes/DataRelations";
+import {DocCollection} from "./DocCollection";
+import {DataRelations} from "./DataRelations";
 import {DataRelationsNamespace} from "./DataRelations.namespace";
 
 export namespace RanksORM {

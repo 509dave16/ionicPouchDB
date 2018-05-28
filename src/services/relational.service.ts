@@ -1,10 +1,10 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
-import {Database} from "../classes/Database";
+import {Database} from "../ranks-orm/Database";
 import TypeSchema = RanksORM.TypeSchema;
-import {DocModel} from "../classes/DocModel";
-import {RanksORM} from "../namespaces/RanksORM.namespace";
-import {DocCollection} from "../classes/DocCollection";
+import {DocModel} from "../ranks-orm/DocModel";
+import {RanksORM} from "../ranks-orm/RanksORM.namespace";
+import {DocCollection} from "../ranks-orm/DocCollection";
 import t from 'tcomb';
 import Properties = RanksORM.Properties;
 
