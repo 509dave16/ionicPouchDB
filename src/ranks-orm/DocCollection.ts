@@ -45,7 +45,7 @@ export class DocCollection {
   }
 
   async save(options: SaveOptions = { refetch: false, related: false, bulk: false}): Promise<any> {
-    return this.dataManager.save(options);
+    return this.dataManager.save(this,options);
   }
 
   /** Public Array Member Implementations **/

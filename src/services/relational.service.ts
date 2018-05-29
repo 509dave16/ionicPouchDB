@@ -24,21 +24,30 @@ export class RelationalService {
       created_at: { type: t.maybe(t.Date), default: () => null },
       id: {type: t.Number, default: () => null},
       rev: {type: t.String, default: () => null}
-    }
+    };
     const authorProps: Properties = {
       ...commonProps,
       name: {type: t.String, default: () => ''},
       books: {type: t.Array, elementType: t.Number, default: () => []},
+      publishers: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
     };
     const bookProps: Properties = {
       ...commonProps,
       title: {type: t.String, default: () => ''},
       author: {type: t.maybe(t.Number), default: () => null},
+      publisher: {type: t.maybe(t.Number), default: () => null},
+    };
+    const publisherProps: Properties = {
+      ...commonProps,
+      name: {type: t.String, default: () => ''},
+      books: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
+      authors: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
     };
 
     const schemas: TypeSchema[] = [
-      {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}}},
-      {singular: 'book', plural: 'books', props: bookProps, relations: {author: {belongsTo: 'authors'}}}
+      {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}, }},
+      {singular: 'book', plural: 'books', props: bookProps, relations: {author: {belongsTo: 'authors'}, publisher: { belongsTo: 'publishers'}}},
+      {singular: 'publisher', plural: 'publishers', props: publisherProps, relations: {authors: { hasMany: 'authors' }, books: { hasMany: 'books'}}}
     ];
     this.db = new Database(schemas, 'relationalDB', remote);
     return this.db.init();
@@ -49,14 +58,18 @@ export class RelationalService {
       if (author) {
         return author;
       }
-    const gotBook = {title: 'A Game of Thrones', id: 1};
-    const hkBook = {title: 'The Hedge Knight', id: 2};
+    const bsPublisher = { name: 'Bantam Spectra' };
+    const publisher = await this.db.save('publishers', bsPublisher);
+    const gotBook = {title: 'A Game of Thrones'};
+    const hkBook = {title: 'The Hedge Knight'};
     const grmAuthor = {name: 'George R. R. Martin'};
-    author = await this.db.save('authors', grmAuthor);
-    await author.attach('books', gotBook);
-    await author.attach('books', hkBook);
-    await author.save({ related: true, bulk: true});
-    return author;
+    const gotBookModel: DocModel = await publisher.attach('books', gotBook);
+    const hkBookModel: DocModel = await publisher.attach('books', hkBook);
+    const grmAuthorModel: DocModel = await publisher.attach('authors', grmAuthor);
+    await grmAuthorModel.attach('books', gotBookModel);
+    await grmAuthorModel.attach('books', hkBookModel);
+    await publisher.save({ related: true, bulk: true});
+    return grmAuthorModel;
   }
 
   getTestData(): Promise<DocModel> {
@@ -80,8 +93,11 @@ export class RelationalService {
 
   async addBookToAuthor(data: any, authorId: number): Promise<DocModel> {
     const author: DocModel = await this.db.findById('authors', authorId);
-    await author.attach('books', data);
-    return author.save({ related: true, bulk: true });
+    const book: DocModel = await author.attach('books', data);
+    const publisher: DocModel = await author.get('publisher') as DocModel;
+    await publisher.attach('books', book);
+    author.save({ related: true, bulk: true });
+
   }
 
   async removeBookFromAuthor(bookId: number, authorId: number): Promise<DocModel> {
@@ -92,13 +108,13 @@ export class RelationalService {
 
   async troubleshoot() {
     // Doc Id Parsing
-    const parsedId: any = this.db.parseDocID('book_1_0000000000000012');
-    console.log(`Book ID Parsed: ${parsedId.id}`);
+    // const parsedId: any = this.db.parseDocID('book_1_0000000000000012');
+    // console.log(`Book ID Parsed: ${parsedId.id}`);
     // Doc conflicts from missing rev
-    const response = await this.db.bulkDocs([{
-      _id: 'book_1_0000000000000012',
-      data: { name: 'its me'},
-    }]);
-    console.log(response);
+    // const response = await this.db.bulkDocs([{
+    //   _id: 'book_1_0000000000000012',
+    //   data: { name: 'its me'},
+    // }]);
+    // console.log(response);
   }
 }

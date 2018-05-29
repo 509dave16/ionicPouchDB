@@ -44,9 +44,12 @@ export class RanksMediator {
     this.dependentRelations = new RelationManager(this, DependentDocRelations);
   }
 
-  public async save(options: SaveOptions): Promise<DocModel|DocCollection> {
-    const modelOrCollection = await this.pm.save(options, this.getRoot());
+  public async save(modelOrCollection: DocModel|DocCollection, options: SaveOptions = { refetch: false, related: false, bulk: false }): Promise<DocModel|DocCollection> {
+    if (options.bulk === false) {
+      this.pm.save(options, modelOrCollection);
+    }
     if (options.bulk) {
+      await this.pm.save(options, this.getRoot());
       this.init();
     }
     if (!options.refetch) {
@@ -95,19 +98,35 @@ export class RanksMediator {
     const descriptor: DocRelationDescriptor = this.getDocRelationDescriptor(parent, relationName);
     this.db.schema.errorIfRelationDoesntExist(type, relationName);
     let value: any = this.parentRelations.getRelation(type, id, relationName);
+    let setRelation = value === null;
 
+    // Relation may not be set
+    if (value === null) {
+      value = descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO ?
+        this.getDocModelByTypeAndId(descriptor.relationToType, parent[relationName]) :
+        this.getDocModelByTypeAndId(descriptor.relationToType, parent[relationName])
+      ;
+    }
+
+    // Model may not have been fetched
     if (value === null) {
       value = await descriptor.relationType === RelationManager.RELATION_TYPE_BELONGS_TO ?
         this.db.findById(descriptor.relationToType, parent[relationName]) :
         this.db.findByIds(descriptor.relationToType, parent[relationName])
       ;
       this.ranks.addToRanks(value);
+    }
+
+    if (setRelation) {
       this.parentRelations.setDataDescriptorRelation(parent, relationName);
       this.dependentRelations.setDataDescriptorRelation(parent, relationName);
     }
+
+    // could be DocCollection if it needed to be fetched from db
     if (value instanceof  DocCollection) {
-      return value; // could be DocCollection if it was fetched;
+      return value;
     }
+    // could be an array of Doc Models if relation not set
     if (value instanceof Array) {
       return new DocCollection(value as Array<DocModel>, descriptor, this);
     }
@@ -125,7 +144,8 @@ export class RanksMediator {
     this.db.schema.errorIfRelationDoesntExist(parentModel.type, relationName);
     this.parentRelations.attachToRelation(parentModel, relationName, childModel,inverseRelation);
     this.dependentRelations.attachToRelation(parentModel, relationName, childModel, inverseRelation);
-    return true;
+    return childModel;
+    // return this.save(childModel, { related: true, bulk: true});
   }
 
   public async detachFromRelation(parentModel: DocModel, relationName: string, modelOrId: DocModel|number, inverseRelation: string) {
@@ -143,7 +163,8 @@ export class RanksMediator {
     }
     this.parentRelations.detachFromRelation(parentModel, relationName, childModel, inverseRelation);
     this.dependentRelations.detachFromRelation(parentModel, relationName, childModel, inverseRelation);
-    return true;
+    return childModel;
+    // return this.save(childModel, { related: true, bulk: true});
   }
 
   public isModel(value: any): boolean {

@@ -24,7 +24,8 @@ export class ParentDocRelations extends DataRelations {
     // so we need to start it off with an empty array for a collection
     if (models === null) {
       models = [];
-      !from[relation] ? from[relation] = models : false;
+      // TODO: Might not need this since the getter sets it up for us
+      // !from[relation] ? from[relation] = models : false;
       this.set(from.type, from.id, relation, models)
     }
     const modelExists = models.find((model: DocModel) => model.id === to.id );

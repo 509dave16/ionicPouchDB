@@ -93,14 +93,12 @@ export class DocModel implements DataDescriptor {
     return this.mediator.getRelation(this, relation);
   }
 
-  attach(relation: string, modelOrDoc: DocModel|any, inverseRelation?: string): DocModel {
-    this.mediator.attachToRelation(this, relation, modelOrDoc, inverseRelation);
-    return this;
+  attach(relation: string, modelOrDoc: DocModel|any, inverseRelation?: string): Promise<DocModel> {
+    return this.mediator.attachToRelation(this, relation, modelOrDoc, inverseRelation) as Promise<DocModel>;
   }
 
-  detach(relation: string, modelOrId: DocModel|number, inverseRelation?: string): DocModel {
-    this.mediator.detachFromRelation(this, relation, modelOrId, inverseRelation);
-    return this;
+  detach(relation: string, modelOrId: DocModel|number, inverseRelation?: string): Promise<DocModel> {
+    return this.mediator.detachFromRelation(this, relation, modelOrId, inverseRelation);
   }
 
   getField(field: string): any {
@@ -123,7 +121,7 @@ export class DocModel implements DataDescriptor {
 
   addToField(field: string, value: any): DocModel {
     this.errorOnFieldNotExist(field);
-    this.errorOnFieldNotArray(field);
+    // this.errorOnFieldNotArray(field);
     this.errorOnValueElementTypeConflict(field, value);
     const ara = this.getField(field) as any[];
     ara.push(value);
@@ -215,7 +213,7 @@ export class DocModel implements DataDescriptor {
     return formattedDoc;
   }
 
-  save(options: SaveOptions = { refetch: false, related: false, bulk: true }): Promise<any> {
-    return this.mediator.save(options);
+  save(options: SaveOptions = { refetch: false, related: false, bulk: false }): Promise<any> {
+    return this.mediator.save(this, options);
   }
 }
