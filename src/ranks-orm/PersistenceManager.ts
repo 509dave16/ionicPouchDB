@@ -38,7 +38,7 @@ export class PersistenceManager {
 
   private async saveAllIndividually() {
     const writes: Promise<any>[] = [];
-    const data: ISideloadedRankModels = this.mediator.ranks.getRanks();
+    const data: ISideloadedRankModels = this.mediator.getRanks();
     for (const type of Object.keys(data)) {
       data[type].map((model: DocModel) => writes.push(this.saveModel(model)));
     }
@@ -78,7 +78,7 @@ export class PersistenceManager {
   }
 
   private getChangedModels(): DocModel[] {
-    const models: DocModel[] = this.mediator.ranks.getFlattenedRanks() as DocModel[];
+    const models: DocModel[] = this.mediator.getFlattenedRanks() as DocModel[];
     return models.filter((model: DocModel) => model.hasChanged());
   }
 
@@ -140,6 +140,6 @@ export class PersistenceManager {
       id = parsedDocID.id;
       type = typeSchema.plural;
     }
-    return this.mediator.ranks.getDocModelByTypeAndId(type,id);
+    return this.mediator.getDocModelByTypeAndId(type,id);
   }
 }

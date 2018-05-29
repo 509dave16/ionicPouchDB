@@ -53,10 +53,9 @@ export class RelationalService {
     const hkBook = {title: 'The Hedge Knight', id: 2};
     const grmAuthor = {name: 'George R. R. Martin'};
     author = await this.db.save('authors', grmAuthor);
-    await author.attach('books', gotBook)
-      .attach('books', hkBook)
-      .save({ related: true, bulk: true})
-    ;
+    await author.attach('books', gotBook);
+    await author.attach('books', hkBook);
+    await author.save({ related: true, bulk: true});
     return author;
   }
 
@@ -81,13 +80,13 @@ export class RelationalService {
 
   async addBookToAuthor(data: any, authorId: number): Promise<DocModel> {
     const author: DocModel = await this.db.findById('authors', authorId);
-    author.attach('books', data);
+    await author.attach('books', data);
     return author.save({ related: true, bulk: true });
   }
 
   async removeBookFromAuthor(bookId: number, authorId: number): Promise<DocModel> {
     const author: DocModel = await this.db.findById('authors', authorId);
-    author.detach('books', bookId);
+    await author.detach('books', bookId);
     return author.save({related: true, bulk: true});
   }
 

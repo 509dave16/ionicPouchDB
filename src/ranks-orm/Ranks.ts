@@ -3,6 +3,7 @@ import SideloadedData = RanksORM.SideloadedData;
 import {RanksMediator} from "./RanksMediator";
 import {DocModel} from "./DocModel";
 import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
+import {DocCollection} from "./DocCollection";
 
 export class Ranks {
   public sideloadedRankModels: ISideloadedRankModels = {};
@@ -17,7 +18,7 @@ export class Ranks {
       this.sideloadedRankModels[type] = sideloadedData[type].map(doc => new DocModel(doc, type, this.mediator));
   }
 
-  public newDocModel(modelOrDoc: DocModel|any, type: string): DocModel {
+  public useExistingOrMakeNewDocModel(modelOrDoc: DocModel|any, type: string): DocModel {
     let docModel: DocModel;
     if (this.mediator.isModel(modelOrDoc)) {
       docModel = modelOrDoc as DocModel;
@@ -29,6 +30,21 @@ export class Ranks {
       docModel = new DocModel(doc, type, this.mediator)
     }
     return docModel;
+  }
+
+  public addToRanks(modelOrCollection: DocModel|DocCollection) {
+    if (modelOrCollection instanceof DocCollection) {
+      modelOrCollection.map((model: DocModel) => this.addDocModelToRanks(model));
+      return;
+    }
+    this.addDocModelToRanks(modelOrCollection);
+  }
+
+  private addDocModelToRanks(model: DocModel) {
+    if (this.getDocModelByTypeAndId(model.type, model.id)) {
+      return;
+    }
+    this.getRankByType(model.type).push(model);
   }
 
   public getRankByType(type: string): DocModel[] {

@@ -15,10 +15,18 @@ export class ParentDocRelations extends DataRelations {
 
   }
   pushToBelongsTo(from: DocModel, relation: string, to: DocModel) {
+    from[relation] = to.id;
     this.setBelongsTo(from, relation, to);
   }
   pushToHasMany(from: DocModel, relation: string, to: DocModel) {
-    const models: Array<DocModel> = super.get<Array<DocModel>>(from.type, from.id, relation);
+    let models: Array<DocModel> = super.get<Array<DocModel>>(from.type, from.id, relation);
+    // If there are is nothing set it means that the related Models have never been fetched
+    // so we need to start it off with an empty array for a collection
+    if (models === null) {
+      models = [];
+      !from[relation] ? from[relation] = models : false;
+      this.set(from.type, from.id, relation, models)
+    }
     const modelExists = models.find((model: DocModel) => model.id === to.id );
     if (!modelExists) {
       models.push(to);

@@ -89,7 +89,7 @@ export class DocModel implements DataDescriptor {
     return this.isNew() || !objectEqual(this.doc, this.originalDoc);
   }
 
-  get(relation: string) {
+  async get (relation: string) {
     return this.mediator.getRelation(this, relation);
   }
 

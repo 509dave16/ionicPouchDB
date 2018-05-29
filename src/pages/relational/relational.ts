@@ -42,7 +42,7 @@ export class RelationalPage {
 
   async initializeData(author: DocModel) {
     this.authors = [author];
-    this.books = author.get('books') as DocCollection;
+    this.books = await author.get('books') as DocCollection;
   }
 
   ionViewDidLoad() {
