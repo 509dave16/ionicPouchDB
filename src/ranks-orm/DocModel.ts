@@ -98,12 +98,12 @@ export class DocModel implements DataDescriptor {
   }
 
   detach(relation: string, modelOrId: DocModel|number, inverseRelation?: string): Promise<DocModel> {
-    return this.mediator.detachFromRelation(this, relation, modelOrId, inverseRelation);
+    return this.mediator.detachFromRelation(this, relation, modelOrId, inverseRelation) as Promise<DocModel>;
   }
 
   getField(field: string): any {
     if (!this.hasField(field)) {
-      console.log(`${field} does not exist on DocModel`);
+      console.log(`${field} does not exist on DocModel of type ${this.type}`);
       return;
     }
     if (this.doc[field] === undefined) {
@@ -193,6 +193,13 @@ export class DocModel implements DataDescriptor {
 
   createDoc(): any {
     const isNewDoc: boolean = this.isNew();
+    // First make sure defaults are populated
+    for(const prop in this.doc) {
+      const value = this.doc[prop];
+      if (value === undefined) {
+        this.doc[prop] = this.typeSchema.props[prop].default();
+      }
+    }
     // 1. Don't change models data
     const clonedDoc: any = objectClone(this.doc);
     // 2. Make a relational pouch id

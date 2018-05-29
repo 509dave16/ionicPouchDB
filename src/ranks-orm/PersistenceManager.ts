@@ -26,12 +26,12 @@ export class PersistenceManager {
 
   public async save(options: SaveOptions, modelOrCollection: DocModel|DocCollection): Promise<DocModel|DocCollection> {
     if (options.related) {
-      await options.bulk ? this.saveAllBulk() : this.saveAllIndividually();
-    } else if (modelOrCollection instanceof  DocModel) {
-      await this.saveModel(modelOrCollection);
-    } else {
+      await (options.bulk ? this.saveAllBulk() : this.saveAllIndividually());
+    } else if (modelOrCollection instanceof  DocCollection) {
       const writes: Promise<any>[] = modelOrCollection.map((model: DocModel) => this.saveModel(model));
       await Promise.all(writes);
+    } else {
+      await this.saveModel(modelOrCollection);
     }
     return modelOrCollection;
   }

@@ -5,29 +5,27 @@ import DocRelationDescriptor = RanksORM.DocRelationDescriptor;
 import SaveOptions = RanksORM.SaveOptions;
 
 export class DocCollection {
-  private dataManager: RanksMediator;
+  private mediator: RanksMediator;
   private readonly  relationDesc: DocRelationDescriptor;
   private readonly models: DocModel[];
-  constructor(models: any[], relationDesc: DocRelationDescriptor,  dataManager: RanksMediator) {
+  constructor(models: any[], relationDesc: DocRelationDescriptor,  mediator: RanksMediator) {
     this.models = models;
     this.relationDesc = relationDesc;
-    this.dataManager = dataManager;
+    this.mediator = mediator;
   }
 
   get(index: number): DocModel {
     return this.models[index];
   }
 
-  add(modelOrDoc: DocModel|any, inverseRelation?:string ): DocCollection {
+  async add(modelOrDoc: DocModel|any, inverseRelation?:string ): Promise<DocCollection> {
     const { from, relationName } = this.relationDesc;
-    this.dataManager.attachToRelation(from, relationName, modelOrDoc, inverseRelation);
-    return this;
+    return this.mediator.attachToRelation(from, relationName, modelOrDoc, inverseRelation) as Promise<DocCollection>;
   }
 
-  remove(modelOrId: DocModel|number, inverseRelation?: string): DocCollection {
+  remove(modelOrId: DocModel|number, inverseRelation?: string): Promise<DocCollection> {
     const { from, relationName } = this.relationDesc;
-    this.dataManager.detachFromRelation(from, relationName, modelOrId, inverseRelation);
-    return this;
+    return this.mediator.detachFromRelation(from, relationName, modelOrId, inverseRelation) as Promise<DocCollection>;
   }
 
   first(): DocModel {
@@ -45,7 +43,7 @@ export class DocCollection {
   }
 
   async save(options: SaveOptions = { refetch: false, related: false, bulk: false}): Promise<any> {
-    return this.dataManager.save(this,options);
+    return this.mediator.save(this,options);
   }
 
   /** Public Array Member Implementations **/

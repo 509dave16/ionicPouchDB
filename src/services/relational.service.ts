@@ -45,7 +45,7 @@ export class RelationalService {
     };
 
     const schemas: TypeSchema[] = [
-      {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}, }},
+      {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}, publishers: {hasMany: 'publishers'} }},
       {singular: 'book', plural: 'books', props: bookProps, relations: {author: {belongsTo: 'authors'}, publisher: { belongsTo: 'publishers'}}},
       {singular: 'publisher', plural: 'publishers', props: publisherProps, relations: {authors: { hasMany: 'authors' }, books: { hasMany: 'books'}}}
     ];
@@ -94,10 +94,9 @@ export class RelationalService {
   async addBookToAuthor(data: any, authorId: number): Promise<DocModel> {
     const author: DocModel = await this.db.findById('authors', authorId);
     const book: DocModel = await author.attach('books', data);
-    const publisher: DocModel = await author.get('publisher') as DocModel;
-    await publisher.attach('books', book);
-    author.save({ related: true, bulk: true });
-
+    const publishers: DocCollection = (await author.get('publishers')) as DocCollection;
+    // await publisher.attach('books', book);
+    return author.save({ related: true, bulk: true });
   }
 
   async removeBookFromAuthor(bookId: number, authorId: number): Promise<DocModel> {

@@ -45,15 +45,10 @@ export class RanksMediator {
   }
 
   public async save(modelOrCollection: DocModel|DocCollection, options: SaveOptions = { refetch: false, related: false, bulk: false }): Promise<DocModel|DocCollection> {
-    if (options.bulk === false) {
-      this.pm.save(options, modelOrCollection);
-    }
-    if (options.bulk) {
-      await this.pm.save(options, this.getRoot());
-      this.init();
-    }
+    const result = await this.pm.save(options, modelOrCollection);
+    this.init();
     if (!options.refetch) {
-      return modelOrCollection;
+      return result;
     }
     return this.refetch();
   }
@@ -144,8 +139,8 @@ export class RanksMediator {
     this.db.schema.errorIfRelationDoesntExist(parentModel.type, relationName);
     this.parentRelations.attachToRelation(parentModel, relationName, childModel,inverseRelation);
     this.dependentRelations.attachToRelation(parentModel, relationName, childModel, inverseRelation);
-    return childModel;
-    // return this.save(childModel, { related: true, bulk: true});
+    // return childModel;
+    return this.save(childModel, { related: true, bulk: true});
   }
 
   public async detachFromRelation(parentModel: DocModel, relationName: string, modelOrId: DocModel|number, inverseRelation: string) {
@@ -163,8 +158,8 @@ export class RanksMediator {
     }
     this.parentRelations.detachFromRelation(parentModel, relationName, childModel, inverseRelation);
     this.dependentRelations.detachFromRelation(parentModel, relationName, childModel, inverseRelation);
-    return childModel;
-    // return this.save(childModel, { related: true, bulk: true});
+    // return childModel;
+    return this.save(childModel, { related: true, bulk: true});
   }
 
   public isModel(value: any): boolean {
