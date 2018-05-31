@@ -17,7 +17,6 @@ import {DataRelationsNamespace} from "./DataRelations.namespace";
 import DataDescriptor = DataRelationsNamespace.DataDescriptor;
 import DataRelationDescriptor = DataRelationsNamespace.DataRelationDescriptor;
 import ISideloadedRankModels = RanksORM.ISideloadedRankModels;
-import {Schema} from "./Schema";
 
 export class RanksMediator {
   private static readonly PLURALITY_MANY = 'collection';

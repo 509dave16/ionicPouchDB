@@ -95,13 +95,15 @@ export class RelationalService {
     const author: DocModel = await this.db.findById('authors', authorId);
     const book: DocModel = await author.attach('books', data);
     const publishers: DocCollection = (await author.get('publishers')) as DocCollection;
-    // await publisher.attach('books', book);
+    await publishers.first().attach('books', book);
     return author.save({ related: true, bulk: true });
   }
 
   async removeBookFromAuthor(bookId: number, authorId: number): Promise<DocModel> {
     const author: DocModel = await this.db.findById('authors', authorId);
     await author.detach('books', bookId);
+    const publishers: DocCollection = (await author.get('publishers')) as DocCollection;
+    await publishers.first().detach('books', bookId);
     return author.save({related: true, bulk: true});
   }
 

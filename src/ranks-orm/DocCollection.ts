@@ -30,14 +30,14 @@ export class DocCollection {
 
   first(): DocModel {
     if (this.length) {
-      return this[0];
+      return this.models[0];
     }
     return null;
   }
 
   last(): DocModel {
     if (this.length) {
-      return this[this.length - 1];
+      return this.models[this.length - 1];
     }
     return null;
   }
