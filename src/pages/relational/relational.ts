@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import {AlertController, IonicPage, LoadingController, NavController, NavParams} from 'ionic-angular';
 import {RelationalService} from "../../services/relational.service";
-import {DocModel} from "../../ranks-orm/DocModel";
-import {DocCollection} from "../../ranks-orm/DocCollection";
+import { DocModel, DocCollection } from 'ranksdb';
 
 /**
  * Generated class for the RelationalPage page.

@@ -1,12 +1,8 @@
 import {Injectable} from "@angular/core";
 import {SuperLoginService} from "./superlogin.service";
-import {Database} from "../ranks-orm/Database";
-import TypeSchema = RanksORM.TypeSchema;
-import {DocModel} from "../ranks-orm/DocModel";
-import {RanksORM} from "../ranks-orm/RanksORM.namespace";
-import {DocCollection} from "../ranks-orm/DocCollection";
 import t from 'tcomb';
-import Properties = RanksORM.Properties;
+import PouchDB from "pouchdb";
+import { Database, DocCollection, DocModel, RanksDB } from 'ranksdb';
 
 @Injectable()
 export class RelationalService {
@@ -16,48 +12,82 @@ export class RelationalService {
   constructor(public superLoginService: SuperLoginService) {
   }
 
-  init(): Promise<any> {
+  async init(): Promise<any> {
     const remote = this.superLoginService.SuperLoginClient.getDbUrl('relational');
-    const commonProps: Properties = {
+    const commonProps: RanksDB.Properties = {
       deleted_at: { type: t.maybe(t.Date), default: () => null },
       updated_at: { type: t.maybe(t.Date), default: () => null },
       created_at: { type: t.maybe(t.Date), default: () => null },
       id: {type: t.Number, default: () => null},
       rev: {type: t.String, default: () => null}
     };
-    const authorProps: Properties = {
+    const authorProps: RanksDB.Properties = {
       ...commonProps,
       name: {type: t.String, default: () => ''},
       books: {type: t.Array, elementType: t.Number, default: () => []},
       publishers: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
     };
-    const bookProps: Properties = {
+    const bookProps: RanksDB.Properties = {
       ...commonProps,
       title: {type: t.String, default: () => ''},
       author: {type: t.maybe(t.Number), default: () => null},
       publisher: {type: t.maybe(t.Number), default: () => null},
     };
-    const publisherProps: Properties = {
+    const publisherProps: RanksDB.Properties = {
       ...commonProps,
       name: {type: t.String, default: () => ''},
       books: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
       authors: {type: t.maybe(t.Array), elementType: t.Number, default: () => []},
     };
 
-    const schemas: TypeSchema[] = [
+    const schemas: RanksDB.TypeSchema = [
       {singular: 'author', plural: 'authors', props: authorProps , relations: {books: {hasMany: 'books'}, publishers: {hasMany: 'publishers'} }},
       {singular: 'book', plural: 'books', props: bookProps, relations: {author: {belongsTo: 'authors'}, publisher: { belongsTo: 'publishers'}}},
       {singular: 'publisher', plural: 'publishers', props: publisherProps, relations: {authors: { hasMany: 'authors' }, books: { hasMany: 'books'}}}
     ];
-    this.db = new Database(schemas, 'relationalDB', remote);
+    const pouch = this.setupReplication(remote);
+    this.db = new Database(schemas, pouch);
     return this.db.init();
   }
 
+  setupReplication(remote: string) {
+    const pouch = new PouchDB('relationalDB');
+    const remoteDB: PouchDB.Database = new PouchDB(remote);
+    let options = {
+      live: true,
+      retry: true,
+      continuous: true
+    };
+
+    pouch.replicate.to(remoteDB, options)
+      .on('change', function (info) {
+        // handle change
+        console.log('info', info);
+      }).on('paused', function (err) {
+      // replication paused (e.g. replication up to date, user went offline)
+      console.log('paused', err);
+      // NOTE: This happens all the time should only log for more specific instances
+      // NOTE: This is happening frequently due to inherited docs that don't exist in CouchDB that are somehow made available in PouchDB.
+      }).on('denied', function (err) {
+        // a document failed to replicate (e.g. due to permissions)
+        console.log('denied', err);
+      }).on('complete', function (info) {
+        // handle complete
+        console.log('complete', info);
+      }).on('error', function (err) {
+        // handle error
+        console.log('error', err);
+      })
+    ;
+    pouch.replicate.from(remoteDB, options);
+    return pouch;
+  }
+
   async seedTestData(): Promise<DocModel> {
-      let author: DocModel = await this.getTestData();
-      if (author) {
-        return author;
-      }
+    let author: DocModel = await this.getTestData();
+    if (author) {
+      return author;
+    }
     const bsPublisher = { name: 'Bantam Spectra' };
     const publisher = await this.db.save('publishers', bsPublisher);
     const gotBook = {title: 'A Game of Thrones'};
