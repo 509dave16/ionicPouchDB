@@ -4,18 +4,18 @@ import {SuperLoginService} from "./superlogin.service";
 
 @Injectable()
 export class RxDBService {
+  public db: any;
   constructor(public superLoginService: SuperLoginService) {
   }
 
   public async init() {
     const remoteName = this.superLoginService.SuperLoginClient.getDbUrl('relational');
-    const db = await RxDB.create({
-      name: remoteName,           // <- name,          // <- storage-adapter
-      password: 'myPassword',     // <- password (optional)
+    this.db = await RxDB.create({
+      name: remoteName,
+      password: 'myPassword',
       adapter: 'idb',
-      multiInstance: true         // <- multiInstance (default: true)
+      multiInstance: false
     });
-    console.dir(db);
     return true;
   }
 }

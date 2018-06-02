@@ -46,7 +46,7 @@
     "pouchdb": "^6.4.3",
     "pouchdb-adapter-idb": "^6.4.3",
     "pouchdb-find": "^6.4.3",
-    "ranksdb": "0.0.3",
+    "ranksdb": "0.0.4",
     "relational-pouch": "^3.0.1",
     "rxdb": "^7.6.1",
     "rxjs": "^5.5.10",

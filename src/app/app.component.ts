@@ -18,7 +18,6 @@ import {RxDbPage} from "../pages/rx-db/rx-db";
 import RxDB from "rxdb";
 import pouchdbAdapterIdb from "pouchdb-adapter-idb";
 import 'rxjs';
-// import 'babel-polyfill';
 
 @Component({
   templateUrl: 'app.html'
@@ -49,12 +48,13 @@ export class MyApp {
     PouchDB.plugin(RelationalPouch);
     PouchDB.plugin(PouchDbFind);
     RxDB.plugin(pouchdbAdapterIdb);
+
     if (superLoginService.SuperLoginClient.authenticated()) {
       // todoService.init();
       await relationalService.init();
-      // await rxdbService.init();
-      this.rootNavComponent.setRoot(RelationalPage, {});
-      // this.rootNavComponent.setRoot(RxDbPage);
+      await rxdbService.init();
+      // this.rootNavComponent.setRoot(RelationalPage, {});
+      this.rootNavComponent.setRoot(RxDbPage);
     } else {
       this.rootNavComponent.setRoot(LoginPage, {});
     }
