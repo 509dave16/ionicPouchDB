@@ -15,6 +15,10 @@ import RelationalPouch from 'relational-pouch';
 import PouchDbFind from 'pouchdb-find';
 import {RxDBService} from "../services/rx-db.service";
 import {RxDbPage} from "../pages/rx-db/rx-db";
+import RxDB from "rxdb";
+import pouchdbAdapterIdb from "pouchdb-adapter-idb";
+import 'rxjs';
+// import 'babel-polyfill';
 
 @Component({
   templateUrl: 'app.html'
@@ -26,6 +30,7 @@ export class MyApp {
     'TestPage' : TestPage,
     'SignupPage' : SignupPage,
     'HomePage' : HomePage,
+    'RxDbPage': RxDbPage,
   };
   /**
    * This form of grabbing a component from the view by the Template Reference Variable
@@ -43,6 +48,7 @@ export class MyApp {
     await platform.ready();
     PouchDB.plugin(RelationalPouch);
     PouchDB.plugin(PouchDbFind);
+    RxDB.plugin(pouchdbAdapterIdb);
     if (superLoginService.SuperLoginClient.authenticated()) {
       // todoService.init();
       await relationalService.init();
