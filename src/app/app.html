@@ -4,21 +4,26 @@
   <ion-content class="menu">
     <ion-list no-lines>
       <button ion-item menuClose (click)="gotoPage('HomePage')">
-        Super Home
+        Todos
         <ion-icon name="search" item-end></ion-icon>
       </button>
       <button ion-item menuClose (click)="gotoPage('LoginPage')">
-        Super Login
+        Login
         <ion-icon name="cog" item-end></ion-icon>
       </button>
       <button ion-item menuClose (click)="gotoPage('SignupPage')">
-        Super Signup
+        Register
         <ion-icon name="pin" item-end></ion-icon>
       </button>
-      <button ion-item menuClose (click)="gotoPage('TestPage')">
-        Test
+      <button ion-item menuClose (click)="gotoPage('RelationalPage')">
+        Ranks ORM
         <ion-icon name="list-box" item-end></ion-icon>
       </button>
+      <button ion-item menuClose (click)="gotoPage('RxDbPage')">
+        Rx DB
+        <ion-icon name="list-box" item-end></ion-icon>
+      </button>
+
     </ion-list>
   </ion-content>
 </ion-menu>

@@ -16,6 +16,8 @@ import {TestPage} from "../pages/test/test";
 import {SuperLoginService} from "../services/superlogin.service";
 import {RelationalService} from "../services/relational.service";
 import {RelationalPage} from "../pages/relational/relational";
+import {RxDBService} from "../services/rx-db.service";
+import {RxDbPage} from "../pages/rx-db/rx-db";
 
 @NgModule({
   declarations: [
@@ -25,6 +27,7 @@ import {RelationalPage} from "../pages/relational/relational";
     SignupPage,
     TestPage,
     RelationalPage,
+    RxDbPage,
   ],
   imports: [
     HttpClientModule,
@@ -39,6 +42,7 @@ import {RelationalPage} from "../pages/relational/relational";
     SignupPage,
     TestPage,
     RelationalPage,
+    RxDbPage,
   ],
   providers: [
     SuperLoginService,
@@ -48,7 +52,8 @@ import {RelationalPage} from "../pages/relational/relational";
     StatusBar,
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
-    RelationalService
+    RelationalService,
+    RxDBService,
   ]
 })
 export class AppModule {}
