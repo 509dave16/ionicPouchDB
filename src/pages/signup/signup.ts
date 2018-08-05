@@ -4,6 +4,7 @@ import { HomePage } from '../home/home';
 import {Todos} from "../../services/todos.service";
 import {HttpClient} from "@angular/common/http";
 import {SuperLoginService} from "../../services/superlogin.service";
+import { RelationalService } from '../../services/relational.service';
 
 
 @Component({
@@ -18,11 +19,11 @@ export class SignupPage {
   password: string;
   confirmPassword: string;
 
-  constructor(public nav: NavController, public http: HttpClient, public todoService: Todos, public superLoginService: SuperLoginService) {
+  constructor(public nav: NavController, public http: HttpClient, public todoService: Todos, public superLoginService: SuperLoginService, public relationalService: RelationalService) {
 
   }
 
-  register(){
+  async register(){
     const headers = {'Content-Type': 'application/json'};
 
     let user = {
@@ -32,14 +33,13 @@ export class SignupPage {
       password: this.password,
       confirmPassword: this.confirmPassword
     };
-    this.superLoginService.SuperLoginClient.register(user)
-      .then(data => {
-        this.todoService.init();
-        this.nav.setRoot(HomePage);
-      }, (err) => {
-        console.log(err);
-      });
-
+    try {
+      const data = await this.superLoginService.SuperLoginClient.register(user);
+      await this.relationalService.init();
+    } catch(e) {
+      console.log(e);
+    }
+    this.nav.setRoot(HomePage);
   }
 
 }

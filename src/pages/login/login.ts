@@ -37,9 +37,9 @@ export class LoginPage {
     };
     const data = await this.superLoginService.SuperLoginClient.login(credentials);
     await this.relationalService.init();
-    // this.nav.setRoot(RelationalPage);
-    await this.rxdbService.init();
-    this.nav.setRoot(RxDbPage);
+    this.nav.setRoot(RelationalPage);
+    // await this.rxdbService.init();
+    // this.nav.setRoot(RxDbPage);
   }
 
   launchSignup(){

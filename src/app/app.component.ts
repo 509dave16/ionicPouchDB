@@ -53,8 +53,8 @@ export class MyApp {
       // todoService.init();
       await relationalService.init();
       await rxdbService.init();
-      // this.rootNavComponent.setRoot(RelationalPage, {});
-      this.rootNavComponent.setRoot(RxDbPage);
+      this.rootNavComponent.setRoot(RelationalPage, {});
+      // this.rootNavComponent.setRoot(RxDbPage);
     } else {
       this.rootNavComponent.setRoot(LoginPage, {});
     }
