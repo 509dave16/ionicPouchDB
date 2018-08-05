@@ -63,8 +63,12 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Creating Book for Author'});
     loading.present();
-    const author: DocModel = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
-    this.initializeData(author);
+    try {
+      const author: DocModel = await this.relationalService.addBookToAuthor({ title: this.bookTitle}, parseInt(this.authorId));
+      this.initializeData(author);
+    } catch (e) {
+      console.log(e);
+    }
     this.bookTitle = '';
     this.authorId = '';
     loading.dismiss();
@@ -92,8 +96,12 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Removing Book from Author'});
     loading.present();
-    const author: DocModel = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
-    this.initializeData(author);
+    try {
+      const author: DocModel = await this.relationalService.removeBookFromAuthor(parseInt(this.detachBookId), parseInt(this.detachAuthorId));
+      this.initializeData(author);
+    } catch(e) {
+      console.log(e);
+    }
     this.detachBookId = '';
     this.detachAuthorId = '';
     loading.dismiss();
@@ -113,8 +121,12 @@ export class RelationalPage {
     }
     const loading = this.loadCtrl.create({ content: 'Adding Author'});
     loading.present();
-    const author: DocModel = await this.relationalService.createAuthor(this.newAuthorId);
-    this.newAuthorId = '';
+    try {
+      const author: DocModel = await this.relationalService.createAuthor(this.newAuthorId);
+      this.newAuthorId = '';
+    } catch (e) {
+      console.log(e);
+    }
     loading.dismiss();
   }
 }
