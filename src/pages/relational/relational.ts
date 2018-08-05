@@ -44,6 +44,11 @@ export class RelationalPage {
     this.books = await author.get('books') as DocCollection;
   }
 
+  resetData() {
+    this.authors = [];
+    this.books = [];
+  }
+
   ionViewDidLoad() {
     console.log('ionViewDidLoad RelationalPage');
   }
@@ -78,6 +83,7 @@ export class RelationalPage {
     const loading = this.loadCtrl.create({ content: 'Removing all docs'});
     loading.present();
     await this.relationalService.removeAllData();
+    this.resetData();
     loading.dismiss();
   }
 
