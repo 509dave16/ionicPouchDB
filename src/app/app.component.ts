@@ -2,19 +2,13 @@ import {Component, ViewChild} from '@angular/core';
 import {Nav, Platform} from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
-import { HomePage } from '../pages/home/home';
-import {LoginPage} from "../pages/login/login";
-import {TestPage} from "../pages/test/test";
-import {SignupPage} from "../pages/signup/signup";
 import {SuperLoginService} from "../services/superlogin.service";
 import {Todos} from "../services/todos.service";
 import {RelationalService} from "../services/relational.service";
-import {RelationalPage} from "../pages/relational/relational";
 import PouchDB from 'pouchdb';
 import RelationalPouch from 'relational-pouch';
 import PouchDbFind from 'pouchdb-find';
 import {RxDBService} from "../services/rx-db.service";
-import {RxDbPage} from "../pages/rx-db/rx-db";
 import RxDB from "rxdb";
 import pouchdbAdapterIdb from "pouchdb-adapter-idb";
 import 'rxjs';
@@ -25,11 +19,11 @@ import 'rxjs';
 export class MyApp {
   // rootPage:any = LoginPage;
   private pages = {
-    'LoginPage' : LoginPage,
-    'TestPage' : TestPage,
-    'SignupPage' : SignupPage,
-    'HomePage' : HomePage,
-    'RxDbPage': RxDbPage,
+    'LoginPage' : 'LoginPage',
+    'TestPage' : 'TestPage',
+    'SignupPage' : 'SignupPage',
+    'HomePage' : 'HomePage',
+    'RxDbPage': 'RxDbPage',
   };
   /**
    * This form of grabbing a component from the view by the Template Reference Variable
@@ -50,13 +44,11 @@ export class MyApp {
     RxDB.plugin(pouchdbAdapterIdb);
 
     if (superLoginService.SuperLoginClient.authenticated()) {
-      // todoService.init();
       await relationalService.init();
       await rxdbService.init();
-      this.rootNavComponent.setRoot(RelationalPage, {});
-      // this.rootNavComponent.setRoot(RxDbPage);
+      this.rootNavComponent.setRoot('RelationalPage', {});
     } else {
-      this.rootNavComponent.setRoot(LoginPage, {});
+      this.rootNavComponent.setRoot('LoginPage', {});
     }
     // Okay, so the platform is ready and our plugins are available.
     // Here you can do any higher level native things you might need.
@@ -67,6 +59,7 @@ export class MyApp {
 
   gotoPage(pageKey) {
     const page = this.pages[pageKey];
+
     this.rootNavComponent.setRoot(page, {});
   }
 }

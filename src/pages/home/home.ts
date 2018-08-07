@@ -1,8 +1,9 @@
 import { Component } from "@angular/core";
-import { NavController, AlertController } from 'ionic-angular';
+import { NavController, AlertController, IonicPage } from 'ionic-angular';
 import { Todos } from '../../services/todos.service';
 import { LoginPage } from '../login/login';
 
+@IonicPage()
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'

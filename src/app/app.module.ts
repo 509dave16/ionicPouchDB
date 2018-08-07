@@ -21,13 +21,7 @@ import {RxDbPage} from "../pages/rx-db/rx-db";
 
 @NgModule({
   declarations: [
-    MyApp,
-    HomePage,
-    LoginPage,
-    SignupPage,
-    TestPage,
-    RelationalPage,
-    RxDbPage,
+    MyApp
   ],
   imports: [
     HttpClientModule,
@@ -37,12 +31,6 @@ import {RxDbPage} from "../pages/rx-db/rx-db";
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HomePage,
-    LoginPage,
-    SignupPage,
-    TestPage,
-    RelationalPage,
-    RxDbPage,
   ],
   providers: [
     SuperLoginService,

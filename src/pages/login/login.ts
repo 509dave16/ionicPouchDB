@@ -1,15 +1,12 @@
 import { Component } from '@angular/core';
-import { NavController } from 'ionic-angular';
-import { SignupPage } from '../signup/signup';
-import { HomePage } from '../home/home';
+import { NavController, IonicPage, LoadingController, AlertController } from 'ionic-angular';
 import { Todos } from '../../services/todos.service';
 import {HttpClient} from "@angular/common/http";
 import {SuperLoginService} from "../../services/superlogin.service";
-import {RelationalPage} from "../relational/relational";
 import {RelationalService} from "../../services/relational.service";
-import {RxDbPage} from "../rx-db/rx-db";
 import {RxDBService} from "../../services/rx-db.service";
 
+@IonicPage()
 @Component({
   selector: 'page-login',
   templateUrl: 'login.html'
@@ -22,6 +19,8 @@ export class LoginPage {
   constructor(
     public nav: NavController,
     public http: HttpClient,
+    public loadingCtrl: LoadingController,
+    public alertCtrl: AlertController,
     public todoService: Todos,
     public superLoginService: SuperLoginService,
     public relationalService: RelationalService,
@@ -35,15 +34,26 @@ export class LoginPage {
       username: this.username,
       password: this.password
     };
-    const data = await this.superLoginService.SuperLoginClient.login(credentials);
-    await this.relationalService.init();
-    this.nav.setRoot(RelationalPage);
-    // await this.rxdbService.init();
-    // this.nav.setRoot(RxDbPage);
+    const loading = this.loadingCtrl.create({ content: 'Logging in'});
+    loading.present();
+    try {
+      const data = await this.superLoginService.SuperLoginClient.login(credentials);
+      await this.relationalService.init();
+      loading.dismiss();
+      this.nav.setRoot('RelationalPage');
+    } catch(error) {
+      loading.dismiss();
+      let alert = this.alertCtrl.create({
+        title: 'Login Error',
+        subTitle: error.message,
+        buttons: ['Dismiss']
+      });
+      alert.present();
+    }
   }
 
   launchSignup(){
-    this.nav.push(SignupPage);
+    this.nav.push('SignupPage');
   }
 
 }
